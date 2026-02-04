@@ -2,27 +2,31 @@ name: DiffMethylTools
 channels:
   - conda-forge
   - bioconda
-  - r
+  - defaults
 dependencies:
+  - python=3.10
+  - pip
+  - joblib      
+  - scikit-learn
   - scipy=1.13.1
   - pandas=2.2.2
   - numpy=1.26.4
-  - statsmodels=0.14.2
   - polars=1.6.0
+  - pyarrow=11
+  - statsmodels=0.14.2
   - matplotlib=3.9.2
   - seaborn=0.13.2
-  - rpy2=3.5.11
-  - bioconductor-limma
-  - pyarrow=11
-  - ncurses=6.5
-  - statsmodels=0.14.2
-  - seaborn
-  - minimap2=2.1.1
-  - htslib=1.20
-  - samtools=1.20
   - pyyaml
   - tqdm
-  - pip
+  - htslib=1.20
+  - samtools=1.20
+  - minimap2=2.1.1 
+  - r-base
+  - rpy2=3.5.11
+  - bioconductor-limma
+  - ncurses
   - pip:
-    - joblib
-
+    - --extra-index-url https://download.pytorch.org/whl/cu117
+    - torch==1.13.0+cu117
+    - torchvision==0.14.0+cu117
+    - torchaudio==0.13.0+cu117

@@ -197,4 +197,4 @@ myDiff2=calculateDiffMeth(meth2_2, mc.cores=20)
 # myDiff25p2=getMethylDiff(myDiff2,difference=25,qvalue=0.05)
 
 
-write.csv(myDiff2, paste(opt$output,"/","new.methylkit.",".",destrand,opt$context ,".",opt$assembly ,".",win ,".cov.",c, ".csv",  sep="" ), row.names = FALSE)
+write.csv(myDiff2, paste(opt$output,"/","new2.methylkit.",".",destrand,opt$context ,".",opt$assembly ,".",win ,".cov.",c, ".csv",  sep="" ), row.names = FALSE)

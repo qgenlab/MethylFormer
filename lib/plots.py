@@ -1,3 +1,4 @@
+from __future__ import annotations
 from collections import deque
 import math
 from typing import Optional, Union

@@ -205,7 +205,7 @@ diff_gr = diff_methylsig(
     t_approx = FALSE, #,TRUE,
     n_cores = 20)
 
-write.csv(diff_gr, paste(opt$output,"/","new.methylSig.",opt$context ,".",opt$assembly ,".",win , ".csv",  sep="" ), row.names = FALSE)
+write.csv(diff_gr, paste(opt$output,"/","new2.methylSig.",opt$context ,".",opt$assembly ,".",win , ".csv",  sep="" ), row.names = FALSE)
 
 #print(paste(opt$output,"/","new.methylkit",opt$context ,opt$assembly ,win ,"cov",c, ".csv",  sep="" ))
 

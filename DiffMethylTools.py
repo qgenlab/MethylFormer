@@ -12,6 +12,12 @@ import inspect
 from pathlib import Path
 import warnings
 
+try:
+    # GPU import 
+    from lib import DL_results
+except ImportError as e:
+    print(f"Could not import: {e.name}")
+    print("The tool will run in CPU-only mode (DiffMethylTools with limma).")
 
 class DiffMethylTools():
     def __init__(self, pipeline=True, results_path=None):
@@ -150,7 +156,7 @@ class DiffMethylTools():
         return wrapper
 
     MERGE_TABLES_REQUIRED_COLUMNS = {
-        "case_data": ["chromosome", "position_start", "coverage", "methylation_percentage", "positive_methylation_count", "negative_methylation_counta", "strand"],
+        "case_data": ["chromosome", "position_start", "coverage", "methylation_percentage", "positive_methylation_count", "negative_methylation_count", "strand"],
         "ctr_data": ["chromosome", "position_start", "coverage", "methylation_percentage", "positive_methylation_count", "negative_methylation_count", "strand"]
     }
     @analysis_function
@@ -258,6 +264,29 @@ class DiffMethylTools():
         if self.pipeline:
             self.saved_results[self.position_based.__name__] = res
 
+        return res
+
+
+    DEEP_LEARNING_BASED_REQUIRED_COLUMNS = {
+        "data": ["chromosome", "position_start", "methylation_percentage*"]
+    }
+    @analysis_function
+    def deep_learning_based(self, data: Optional[InputProcessor] = None , model_path="../bin/DL_model_state.pth", rerun=False) -> pd.DataFrame:
+        assert (not self.pipeline and data is not None) or (self.pipeline), "If the pipeline isn't in use, data must be provided."
+        parameters = locals().copy()
+        if data is not None:
+            data = data.copy()
+            data.process()
+            data = data.data_container
+        else:
+            print(self.saved_results)
+            data = self.saved_results[self.merge_tables.__name__]
+        print(data)
+        parameters = self.__prepare_parameters(parameters, data=data)
+        model = DL_results.DLresults(**parameters)
+        res = model.predict_results()
+        if self.pipeline:
+            self.saved_results[self.deep_learning_based.__name__] = res
         return res
 
     MAP_WIN_2_POS_REQUIRED_COLUMNS = {
@@ -392,6 +421,41 @@ class DiffMethylTools():
         if self.pipeline:
             self.saved_results[(self.filters.__name__, position_or_window)] = res
 
+        return res
+
+    FILTERS_DL_REQUIRED_COLUMNS = {
+        "data": ["hedges_g", "diff"]
+    }
+    @analysis_function
+    def filters_dl(self, data: Optional[InputProcessor] = None, min_output=0.35, abs_min_diff=0, rerun=False) -> pd.DataFrame:
+        """Filter data by q-value and minimum difference.
+        .. note::
+            Required columns for ``data``:
+                - ``["hedges_g", "diff"]``
+
+        :param data: Input data. Not necessary if the pipeline is in use, defaults to None
+        :type data: InputProcessor, optional
+        :param min_output: Minimum  deep learning model output, defaults to 0.35
+        :type min_output: float, optional
+        :param abs_min_diff: Absolute minimum difference filter, defaults to 0
+        :type abs_min_diff: int, optional
+        :param rerun: Rerun the analysis. If False, load previous output. Defaults to False.
+        :type rerun: bool, optional
+        :return: Filtered input data
+        :rtype: pd.DataFrame
+        """
+        assert (not self.pipeline and data is not None) or (self.pipeline), "If the pipeline isn't in use, data must be provided."
+        parameters = locals().copy()
+        if data is not None:
+            data = data.copy()
+            data.process()
+            data = data.data_container
+        else:
+            data = self.saved_results[(self.deep_learning_based.__name__)]
+        parameters = self.__prepare_parameters(parameters, data=data)
+        res = self.obj.filters_dl(**parameters)
+        if self.pipeline:
+            self.saved_results[(self.filters_dl.__name__)] = res
         return res
 
     GENERATE_DMR_REQUIRED_COLUMNS = {
@@ -1159,7 +1223,82 @@ class DiffMethylTools():
         pos_mapped = self.map_win_2_pos(InputProcessor(DMR[0]) , InputProcessor(res) )
         mapped = self.map_positions_to_genes(InputProcessor(pos_mapped), ref_folder= ref_folder)
         return mapped
-    
+
+    ALL_ANALYSIS_DL_REQUIRED_COLUMNS = {
+    "case_data": ["chromosome", "position_start", "coverage", "methylation_percentage", "positive_methylation_count", "negative_methylation_count", "strand"],
+    "ctr_data": ["chromosome", "position_start", "coverage", "methylation_percentage", "positive_methylation_count", "negative_methylation_count", "strand"]
+    }
+    def all_analysis_dl(self, case_data: InputProcessor, ctr_data: InputProcessor, ref_folder = None,window_based=False, min_cov_individual = 10, min_cov_group = 15, filter_samples_ratio=0.6, meth_group_threshold=0.2, cov_percentile = 100.0, min_samp_ctr = 2, min_samp_case = 2, min_output=0.35, abs_min_diff=0.0, features=None, model_path="../bin/DL_model_state.pth") -> pd.DataFrame:
+     """Run all analysis methods.
+
+     .. note::
+         ``case_data`` and ``ctr_data`` must be from a list of samples, where each contains one of the following column formats:
+             - ``["chromosome", "position_start", "coverage", "methylation_percentage"]``
+             - ``["chromosome", "position_start", "positive_methylation_count", "negative_methylation_count"]``
+
+     .. note::
+         if ``window_based`` is True, the following methods will be run:
+             - ``merge_tables``
+             - ``window_based``
+             - ``generate_q_values``
+             - ``filters``
+             - ``map_win_2_pos``
+         if ``window_based`` is False, the following methods will be run:
+             - ``merge_tables``
+             - ``position_based``
+             - ``generate_q_values``
+             - ``filters``
+
+     :param case_data: Case data (list of files)
+     :type case_data: InputProcessor
+     :param ctr_data: Control data (list of files)
+     :type ctr_data: InputProcessor
+     :param window_based: Window-based analysis, defaults to True
+     :type window_based: bool, optional
+     :param min_cov_individual: Minimum coverage filter (individual), defaults to 10
+     :type min_cov_individual: int, optional
+     :type min_cov: int, optional
+     :param min_cov_group: Minimum coverage filter (group), defaults to 15
+     :param filter_samples_ratio: Minimum sample ratio filter. Used with min_cov_group, defaults to 0.6
+     :type filter_samples_ratio: float, optional
+     :param meth_group_threshold: Methylation group threshold. Used with min_cov_group, defaults to 0.2
+     :type meth_group_threshold: float, optional
+     :type min_cov_group: int, optional
+     :param cov_percentile: Maximum coverage filter (percentile of sample coverage). Ranges from 0.0-100.0, defaults to 100.0
+     :type cov_percentile: float, optional
+     :param min_samp_ctr: Minimum samples in control, defaults to 2
+     :type min_samp_ctr: int, optional
+     :param min_samp_case: Minimum samples in case, defaults to 2
+     :type min_samp_case: int, optional
+     :param min_output: Minimum  deep learning model output, defaults to 0.35
+     :type min_output: float, optional
+     :param abs_min_diff: Minimum absolute difference filter, defaults to 0
+     :type abs_min_diff: float, optional
+     :return: Final significant positions
+     :model_path: Path to the deep learning model
+     :rtype: pd.DataFrame
+     """
+     if ref_folder == None: warnings.warn("all_analysis requires a reference folder; if not provided, the script will stop after the DMR identification step.", category=UserWarning, stacklevel=2)
+     self.pipeline = False # True may take a lot of memory
+     print("merging")
+     min_cov_individual = int(min_cov_individual)
+     min_cov_group = int(min_cov_group)
+     filter_samples_ratio = float(filter_samples_ratio)
+     meth_group_threshold = float(meth_group_threshold)
+     cov_percentile = float(cov_percentile)
+     min_samp_ctr = int(min_samp_ctr)
+     min_samp_case = int(min_samp_case)
+     merged = self.merge_tables(case_data, ctr_data, min_cov_individual = min_cov_individual, min_cov_group = min_cov_group, filter_samples_ratio=filter_samples_ratio, meth_group_threshold=meth_group_threshold, cov_percentile = cov_percentile, min_samp_ctr = min_samp_ctr, min_samp_case = min_samp_case)
+     del case_data, ctr_data
+     res = self.deep_learning_based(InputProcessor(merged), model_path= model_path)
+     del merged
+     # res = self.generate_q_values(InputProcessor(res))
+     res_filter = self.filters_dl(InputProcessor(res), min_output=min_output, abs_min_diff=abs_min_diff)
+     DMR = self.generate_DMR(InputProcessor(res_filter), InputProcessor(res))
+     pos_mapped = self.map_win_2_pos(InputProcessor(DMR[0]) , InputProcessor(res) )
+     mapped = self.map_positions_to_genes(InputProcessor(pos_mapped), ref_folder= ref_folder)
+     return mapped
+
     ALL_PLOTS_REQUIRED_COLUMNS = {
         "data": ["chromosome", "position_start", "region_start", "q-value", "diff", "methylation_percentage*", "coverage"],
         "gene_data": ["intron", "intron_diff", "exon", "exon_diff", "upstream", "upstream_diff"],

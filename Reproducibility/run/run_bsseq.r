@@ -186,5 +186,5 @@ print(bismarkBSseq.tstat)
 
 dmrs0 <- dmrFinder(bismarkBSseq.tstat, cutoff = c(-4.6, 4.6))
 
-write.csv(dmrs0, paste(opt$output,"/","new.dsseq.",opt$context ,".",opt$assembly ,".","DMR" , ".csv",  sep="" ), row.names = FALSE)
+write.csv(dmrs0, paste(opt$output,"/","new2.dsseq.",opt$context ,".",opt$assembly ,".","DMR" , ".csv",  sep="" ), row.names = FALSE)
 

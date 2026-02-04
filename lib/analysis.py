@@ -291,6 +291,20 @@ class Analysis():
         data = data[data["diff"].abs() >= float(abs_min_diff)]
 
         return data
+
+    def filters_dl(self, data: InputProcessor.data_container, min_output=0.35, abs_min_diff=0):
+        """Required columns:
+
+        ["hedges_g", "diff"]
+
+        """
+        assert isinstance(data, pd.DataFrame), "List input not acceptable for this function."
+        self.assert_required_columns(data, ["hedges_g", "diff"])
+        
+        data = data[data["hedges_g"].abs() >= float(min_output)]
+        data = data[data["diff"].abs() >= float(abs_min_diff)]
+
+        return data
     
     def generate_DMR(self, significant_position_data: InputProcessor.data_container, position_data: InputProcessor.data_container, min_pos=3, neural_change_limit=7.5, neurl_perc=30, opposite_perc=10):
         """

@@ -108,7 +108,7 @@ BSobj = makeBSseqData(files, classes )
 
 print(BSobj)
 
-dmlTest = DMLtest(BSobj, group1=class_1, group2=class_2, ncores=20) # ncores=20
+dmlTest = DMLtest(BSobj, group1=class_1, group2=class_2, ncores=20, smoothing=TRUE, equal.disp=TRUE) # ncores=20
 
 
 dmls = callDML(dmlTest, delta=0.0, p.threshold=1)
@@ -122,6 +122,6 @@ dmrs = callDMR(dmlTest, delta=0.1, p.threshold=0.05)
 # myDiff25p2=getMethylDiff(myDiff2,difference=25,qvalue=0.05)
 
 
-write.csv(dmls, paste(opt$output,"/","new.dss.",ds ,opt$context ,".",opt$assembly ,"DML" , ".csv",  sep="" ), row.names = FALSE)
+write.csv(dmls, paste(opt$output,"/","new2.dss.",ds ,opt$context ,".",opt$assembly ,"DML" , ".csv",  sep="" ), row.names = FALSE)
 
-write.csv(dmrs, paste(opt$output,"/","new.dss.",ds ,opt$context ,".",opt$assembly ,"DMR" , ".csv",  sep="" ), row.names = FALSE)
+write.csv(dmrs, paste(opt$output,"/","new2.dss.",ds ,opt$context ,".",opt$assembly ,"DMR" , ".csv",  sep="" ), row.names = FALSE)
