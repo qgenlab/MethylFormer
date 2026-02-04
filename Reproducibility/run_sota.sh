@@ -123,45 +123,17 @@ mkdir -p $output/DiffMethylTools/
 python ../DiffMethylTools.py all_analysis --case "$case_list" --control "$ctr_list" --input_format BED --ref_folder hg38
 
 
+echo "running DiffMethylTools with Deep learning..."
 
+if [[ $input_format == "BED" ]]; then
+        ctr_list=$(ls $ctr/* | paste -sd " " -)
+        case_list=$(ls $case/* | paste -sd " " -)
+else
+        ctr_list=$(ls $output/ctr/*_converted.bed | paste -sd " " -)
+        case_list=$(ls $output/case/*_converted.bed | paste -sd " " -)
 
-###########################################################
-###########################################################
-###########################################################
-#
-#if [[ $input_format == "BED" ]]; then
-#	case=$case/*.bed
-#	ctr=$ctr/*.bed
-#	echo "Converting from BED to DSS format..."
-#	for f in $case; do
-#		./convert/bed2dss.py $f $output/case
-#	done
-#        for f in $ctr; do
-#                ./convert/bed2dss.py $f $output/ctr
-#        done
-#
-#fi
-#	
-#	
-#	
-#if [[ $input_format == "CR" ]]; then	
-#	echo "Converting from  format..."
-#        for f in $case; do
-#                ./convert/bed2dss.py $f $output/case
-#        done
-#        for f in $ctr; do
-#                ./convert/bed2dss.py $f $output/ctr
-#        done
-#fi
-#
-#
-#if [[ $input_format == "MB" ]]; then
-#	echo "Converting from format..."
-#        for f in $case; do
-#                ./convert/bed2dss.py $f $output/case
-#        done
-#        for f in $ctr; do
-#                ./convert/bed2dss.py $f $output/ctr
-#        done
-#fi
-#
+fi
+
+mkdir -p $output/DiffMethylTools/
+python ../DiffMethylTools.py all_analysis_dl --case "$case_list" --control "$ctr_list" --input_format BED --ref_folder hg38 --model_path ../bin/DL_model_state.pth
+
