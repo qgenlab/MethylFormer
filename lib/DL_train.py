@@ -15,6 +15,16 @@ import torch.optim as optim
 from sklearn.metrics import roc_auc_score
 import traceback
 from .DL_model import *
+import random
+seed = 42
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+
+
 
 def lr_lambda(step):
     return 0.99 ** (step // 100)
