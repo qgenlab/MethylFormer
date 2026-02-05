@@ -14,14 +14,14 @@ import torch.nn as nn
 import torch.optim as optim
 from sklearn.metrics import roc_auc_score
 import traceback
-from DL_model import *
+from .DL_model import *
 
 def lr_lambda(step):
     return 0.99 ** (step // 100)
 
 
 
-class train_DL():
+class DL_train():
     def __init__(self, case, ctr, rev_ctr, device_ids, seq_len=1024, num_workers=8, batch_size=32, output_path="."):
         self.case = glob.glob(case)
         self.ctr = glob.glob(ctr)
@@ -32,15 +32,15 @@ class train_DL():
         self.loader = DataLoader(self.dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, collate_fn=custom_collate)
         self.device_ids = device_ids
         self.model = None
-    def train(self, epochs = 5, init_model = None, device_ids = [0, 1, 2, 3], initial_lr = 1e-4):
+    def train(self, epochs = 5, init_model = None, initial_lr = 1e-4):
         self.model = diff_methy()
-        if isinstance(device_ids, list):
-            device_id = device_ids[0]
+        if isinstance(self.device_ids, list):
+            device_id = self.device_ids[0]
             device = torch.device('cuda:'+str(device_id) if torch.cuda.is_available() else 'cpu')
             self.model.to(device)
-            self.model = nn.DataParallel(self.model, device_ids=device_ids)
+            self.model = nn.DataParallel(self.model, device_ids=self.device_ids)
         else:
-            device = torch.device('cuda:'+str(device_ids) if torch.cuda.is_available() else 'cpu')
+            device = torch.device('cuda:'+str(self.device_ids) if torch.cuda.is_available() else 'cpu')
             self.model.to(device)
         optimizer = optim.Adam(self.model.parameters(), lr=initial_lr)
         scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
@@ -59,7 +59,7 @@ class train_DL():
                 target = rand_diff.to(device).unsqueeze(-1)
                 # torch.cuda.empty_cache()
                 try:
-                    output = model(case, ctr, pos)
+                    output = self.model(case, ctr, pos)
                 except Exception as e:
                     print("Exception caught:")
                     traceback.print_exc()
@@ -78,5 +78,5 @@ class train_DL():
                 loss.backward()
                 optimizer.step()
                 scheduler.step()
-            torch.save(model, f"{self.output_path}/model_full_epoch_{epoch}.pth")
+            torch.save(self.model, f"{self.output_path}/model_full_epoch_{epoch}.pth")
 

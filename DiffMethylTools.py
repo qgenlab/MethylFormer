@@ -15,9 +15,11 @@ import warnings
 try:
     # GPU import 
     from lib import DL_results
+    from lib import DL_train
 except ImportError as e:
     print(f"Could not import: {e.name}")
     print("The tool will run in CPU-only mode (DiffMethylTools with limma).")
+
 
 class DiffMethylTools():
     def __init__(self, pipeline=True, results_path=None):
@@ -1354,7 +1356,10 @@ class DiffMethylTools():
         parameters = self.__prepare_parameters(parameters, regions_df=regions_df)
         res = self.plots.match_position_annotation(**parameters)
         return res
-
+    def DL_train(self, case:str, ctr:str, rev_ctr:str, device_ids: list[int] = [0], seq_len: int =1024, num_workers: int = 8, batch_size: int =32, output_path: str =".", epochs:int = 5, initial_lr:float = 1e-4) -> None:
+        dl = DL_train.DL_train(case, ctr, rev_ctr, device_ids)
+        dl.train(epochs, initial_lr)
+        
 def parse_arguments():
     parser = argparse.ArgumentParser(description="DiffMethylTools")
     
@@ -1376,24 +1381,36 @@ def parse_arguments():
 
         method_parser = subparsers.add_parser(name, help=f"Run the {name} method")
         sig = inspect.signature(method)
-        if name == "all_analysis" or name == "merge_tables":
+        if name == "all_analysis" or name == "merge_tables" or name == "all_analysis_dl":
             method_parser.add_argument(f"--input_format", type=str, default=None, help=f"(Input the input file format (CR for Bismark cytosine report or BED for BED methylation file) default: {None})")
         for param_name, param in sig.parameters.items():
             # print(param_name, param) #######################################
             if param_name == "self":
                 continue
             arg_type = param.annotation if param.annotation != inspect.Parameter.empty else str
-            if type(arg_type) == UnionType:
-                arg_type = Union
+            default = param.default if param.default != inspect.Parameter.empty else None
+            is_list = isinstance(default, list) or (arg_type == list)
 
             if arg_type != InputProcessor and arg_type != Optional[InputProcessor]:
-                default = param.default if param.default != inspect.Parameter.empty else None
-                if param.kind != param.POSITIONAL_ONLY:
-                    if get_origin(arg_type) is Optional:
-                        arg_type = param.annotation.__args__[0]
-                    method_parser.add_argument(f"--{param_name}", type=arg_type, default=default, help=f"(default: {default})")
+                kwargs = {
+                    "help": f"(default: {default})"
+                }
+                if is_list:
+                    kwargs["nargs"] = "+"  # <--- THIS ALLOWS "0 1 2 3"
+                    if "device_ids" in param_name:
+                         kwargs["type"] = int
+                    elif default and len(default) > 0:
+                         kwargs["type"] = type(default[0])
+                    else:
+                         kwargs["type"] = str
                 else:
-                    method_parser.add_argument(f"--{param_name}", type=arg_type, required=True, help="(required)")
+                    kwargs["type"] = arg_type
+                if param.kind != param.POSITIONAL_ONLY:
+                    kwargs["default"] = default
+                else:
+                    kwargs["required"] = True
+                    kwargs["help"] = "(required)"
+                method_parser.add_argument(f"--{param_name}", **kwargs)
             else:
                 method_parser.add_argument(f"--{param_name}_file", type=str, nargs="+", required=True, help="(required, can be a list of files)")
                 method_parser.add_argument(f"--{param_name}_has_header", action="store_true", required=False, help="(use this flag if there is a header.)")
