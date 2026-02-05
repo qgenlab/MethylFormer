@@ -15,6 +15,16 @@ import torch.optim as optim
 from sklearn.metrics import roc_auc_score
 import traceback
 from .DL_model import *
+import random
+seed = 42
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+
+
 
 def lr_lambda(step):
     return 0.99 ** (step // 100)
@@ -32,6 +42,7 @@ class DL_train():
         self.loader = DataLoader(self.dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, collate_fn=custom_collate)
         self.device_ids = device_ids
         self.model = None
+        self.output_path = output_path
     def train(self, epochs = 5, init_model = None, initial_lr = 1e-4):
         self.model = diff_methy()
         if isinstance(self.device_ids, list):

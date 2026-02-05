@@ -143,20 +143,7 @@ else
 
 fi
 
-mkdir -p $output/DiffMethylTools/
-python $SCRIPT_DIR/../DiffMethylTools.py all_analysis_dl --case_data_file $case_list --ctr_data_file $ctr_list --input_format BED --ref_folder hg38 --model_path $SCRIPT_DIR/../bin/DL_model_state.pth
+mkdir -p $output/DiffMethylTools_dl/
+python $SCRIPT_DIR/../DiffMethylTools.py all_analysis_dl --case_data_file $case_list --ctr_data_file $ctr_list --input_format BED --ref_folder hg38 --model_path $SCRIPT_DIR/../bin/DL_model_state.pth --results_path $output/DiffMethylTools_dl/
 
-echo "running DiffMethylTools with Deep learning..."
-
-if [[ $input_format == "BED" ]]; then
-        ctr_list=$(ls $ctr/* | paste -sd " " -)
-        case_list=$(ls $case/* | paste -sd " " -)
-else
-        ctr_list=$(ls $output/ctr/*_converted.bed | paste -sd " " -)
-        case_list=$(ls $output/case/*_converted.bed | paste -sd " " -)
-
-fi
-
-mkdir -p $output/DiffMethylTools/
-python ../DiffMethylTools.py all_analysis_dl --case "$case_list" --control "$ctr_list" --input_format BED --ref_folder hg38 --model_path ../bin/DL_model_state.pth
 

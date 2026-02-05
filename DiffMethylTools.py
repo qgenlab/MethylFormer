@@ -1361,13 +1361,17 @@ class DiffMethylTools():
         dl.train(epochs, initial_lr)
         
 def parse_arguments():
+    parent_parser = argparse.ArgumentParser(add_help=False)
+    parent_parser.add_argument("--results_path", type=str, default=".", help="The output folder.")
+
     parser = argparse.ArgumentParser(description="DiffMethylTools")
-    
+
     parser.add_argument(
     "--version",
     action="version",
     version="%(prog)s 1.0.0"
     )
+
     
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
@@ -1379,7 +1383,7 @@ def parse_arguments():
 
         names_argument_added = []
 
-        method_parser = subparsers.add_parser(name, help=f"Run the {name} method")
+        method_parser = subparsers.add_parser(name, help=f"Run the {name} method", parents=[parent_parser])
         sig = inspect.signature(method)
         if name == "all_analysis" or name == "merge_tables" or name == "all_analysis_dl":
             method_parser.add_argument(f"--input_format", type=str, default=None, help=f"(Input the input file format (CR for Bismark cytosine report or BED for BED methylation file) default: {None})")
@@ -1462,15 +1466,23 @@ def main():
         return
 
     # Initialize DiffMethylTools instance
-    tool = DiffMethylTools(pipeline=False)
+    # tool = DiffMethylTools(pipeline=False)
 
     # Get the selected method
-    method = getattr(tool, args.command)
+    # method = getattr(tool, args.command)
 
     # Prepare arguments for the method
+    # sig = inspect.signature(method)
+    # method_args = {}
+
+    tool = DiffMethylTools(pipeline=False, results_path = getattr(args, "results_path", "."))
+
+    method = getattr(tool, args.command)
     sig = inspect.signature(method)
     method_args = {}
-    output = method.__name__ + ".csv"
+
+
+    output = tool.results_path+"/data/"+method.__name__ + ".csv"
     
     for param_name, param in sig.parameters.items():
         if param_name == "self":
@@ -1535,10 +1547,10 @@ def main():
         result.to_csv(output, index=False)
     elif type(result) == list:
         for i, df in enumerate(result):
-            df.to_csv(f"{output}_{i}.csv", index=False)
+            df.to_csv(f"{tool.results_path}/data/{output}_{i}.csv", index=False)
     elif type(result) == tuple:
         for i, l in enumerate(list(result)):
-            f = open(f"{output}_{i}.txt", "w")
+            f = open(f"{tool.results_path}/data/{output}_{i}.txt", "w")
             f.write("\n".join(l))
             f.close()
 

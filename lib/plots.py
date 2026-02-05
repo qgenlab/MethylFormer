@@ -15,8 +15,8 @@ from collections import defaultdict, Counter
 import random
 
 class Plots():
-    def __init__(self):
-        pass
+    def __init__(self, save_path = "."):
+        self.save_path = save_path+"/plots/"
 
     def assert_required_columns(self, df, required_columns):
         Analysis().assert_required_columns(df, required_columns)
@@ -80,7 +80,7 @@ class Plots():
         ax.tick_params(axis='y', labelsize=12)
         ax.legend(ax.get_legend_handles_labels()[0], ax.get_legend_handles_labels()[1], fontsize=13)
         plt.tight_layout()
-        plt.savefig(name, dpi=300)
+        plt.savefig(self.save_path+name, dpi=300)
     
     def manhattan_plot(self, data: InputProcessor.data_container, name: str, threshold: Optional[float] = 0.05, title: str = None, x_label: str = None, y_label: str = None):
         assert isinstance(data, pd.DataFrame), "List input not acceptable for this function."
@@ -150,7 +150,7 @@ class Plots():
         ax.tick_params(axis='x', labelsize=12)
         ax.tick_params(axis='y', labelsize=22)
         plt.tight_layout()
-        plt.savefig(name, dpi=600)
+        plt.savefig(self.save_path+name, dpi=600)
 
     def coverage_plot(self, ctr_data: Union[InputProcessor.data_container, list[InputProcessor.data_container]], case_data: Union[InputProcessor.data_container, list[InputProcessor.data_container]], name : str, cov_min : int = -1, cov_max : int = -1, cov_max_percentile : float = -1, bins:int = 20, title: str = None, x_label: str = None, y_label: str = None):
         # assert that data is a list of dataframes
@@ -252,7 +252,7 @@ class Plots():
             plt.suptitle("Coverage Histograms", fontsize=30)
 
         plt.tight_layout()
-        plt.savefig(name, dpi=300)
+        plt.savefig(self.save_path+name, dpi=300)
 
     def graph_gene_regions(self, gene_data: InputProcessor.data_container, ccre_data: InputProcessor.data_container, name: str, gene_regions: list[str]|str = ["intron", "exon", "upstream", "CCRE"], intron_cutoff: int = -1, exon_cutoff: int = -1, upstream_cutoff: int = -1, CCRE_cutoff: int = -1,prom_cutoff:int = -1, title: str = None, x_label: str = None, intron_y_label: str = None, exon_y_label: str = None, upstream_y_label: str = None, CCRE_y_label: str = None, prom_y_label: str = None):
         # check if gene_Data and ccre_data are not list
@@ -328,7 +328,7 @@ class Plots():
         else:
             fig.suptitle(f"", fontsize=30, y=0.98)
         plt.tight_layout(rect=[0, 0, 1, 0.94], pad=3.0, w_pad=4.0, h_pad=4.0)
-        plt.savefig(name, dpi=600)
+        plt.savefig(self.save_path+name, dpi=600)
     def __prepare_gene_methylation(self, position_data: InputProcessor.data_container,region_data: InputProcessor.data_container, left_distance: int = 1000, right_distance: int = 100, window_size: int = 100, hypermethylated: bool = True, gene_hypermethylated_min: int = 20, window_hypermethylated_min: int = 5, min_hypermethylated_windows: int = 5, hypomethylated: bool = True, gene_hypomethylated_max: int = -20, window_hypomethylated_max: int = -5, min_hypomethylated_windows: int = 5, position_count: int = 5, gtf_file: str= "gencode.v41.chr_patch_hapl_scaff.annotation.gtf", position_or_region: str = "region"):        
         """
             use the gtf file to get the upstream region for each gene
@@ -464,7 +464,7 @@ class Plots():
             ax.set_title("", fontsize=25)
 
         plt.tight_layout()
-        plt.savefig(name, dpi=600, bbox_inches='tight')
+        plt.savefig(self.save_path+name, dpi=600, bbox_inches='tight')
         df.to_csv(csv_name)
 
     def graph_upstream_UCSC(self, gene_name: str, position_data: InputProcessor.data_container, name: str="UCSC_graph.bedGraph", before_tss: int = 5000, gtf_file: str = ""):
@@ -675,7 +675,7 @@ class Plots():
         label = [format(int(x), ",") for x in loc]
         plt.xticks(loc, label)
         
-        plt.savefig(name, dpi=600, bbox_inches='tight')
+        plt.savefig(self.save_path+name, dpi=600, bbox_inches='tight')
        
     def __sliding_window_avg(self, df, start_col, window_size, step_size, sample_start_ind):
         new_rows = []
@@ -839,7 +839,7 @@ class Plots():
                   if enhancer_in_region.shape[0]>0:
                      axes[ax_i].set_ylim(0, annotation_y + add_y)
             plt.tight_layout()
-            plt.savefig(name+'/long_region_plot_'+base_fn+'.png', dpi=600)
+            plt.savefig(self.save_path+name+'/long_region_plot_'+base_fn+'.png', dpi=600)
             plt.close('all')
             t_n_ear = 0;
             for _i_sa in range(len(windowed_data['Group1_Mean'])):
@@ -1007,11 +1007,11 @@ class Plots():
                     total_counts_4[_c] += this_counts_4[_c]
                 for _c in this_counts_4:
                     total_counts_p4[_c] += this_counts_4[_c]
-        self.__annotation_chart(total_counts_1, "Fraction of Occurrences: Gene Intron, Gene Exon, IG, and ENCODE Types", add_to_name + "_" + name+'_inex2.png')
-        self.__annotation_chart(total_counts_2, "Fraction of Occurrences: Gene Body, IG, and ENCODE Types", add_to_name + "_" + name+'_body2.png')
-        self.__annotation_chart(total_counts_3, "", add_to_name + "_" + name+'_repeat2.png')
-        self.__annotation_chart(total_counts_4, "", add_to_name + "_" + name+'_epic2.png')
-        self.__annotation_chart(total_counts_p4, "", add_to_name + "_" + name+'_epicP2.png')
+        self.__annotation_chart(total_counts_1, "Fraction of Occurrences: Gene Intron, Gene Exon, IG, and ENCODE Types", self.save_path+add_to_name + "_" + name+'_inex2.png')
+        self.__annotation_chart(total_counts_2, "Fraction of Occurrences: Gene Body, IG, and ENCODE Types", self.save_path+add_to_name + "_" + name+'_body2.png')
+        self.__annotation_chart(total_counts_3, "", self.save_path+add_to_name + "_" + name+'_repeat2.png')
+        self.__annotation_chart(total_counts_4, "", self.save_path+add_to_name + "_" + name+'_epic2.png')
+        self.__annotation_chart(total_counts_p4, "", self.save_path+add_to_name + "_" + name+'_epicP2.png')
         return [pd.DataFrame.from_dict(list(dict(total_counts_1).items())), pd.DataFrame.from_dict(list(dict(total_counts_2).items())), pd.DataFrame.from_dict(list(dict(total_counts_3).items())), pd.DataFrame.from_dict(list(dict(total_counts_4).items())), pd.DataFrame.from_dict(list(dict(total_counts_p4).items())), pd.DataFrame.from_dict(list(dict(total_gene).items()))]
     
     def match_position_annotation(self, regions_df: InputProcessor.data_container, bed_file: InputProcessor.data_container, name:str="match_position_annotation", show_counts = False):
@@ -1093,11 +1093,11 @@ class Plots():
            total_counts_4[ _c ] = 1 + total_counts_4[ _c ]
         for _c in this_counts_4:
            total_counts_p4[ _c ] = this_counts_4[ _c ] + total_counts_p4[ _c ]
-        self.__annotation_chart(total_counts_1, "Fraction of Occurrences: Gene Intron, Gene Exon, IG, and ENCODE Types", name+'_inex2.png', nb = show_counts)
-        self.__annotation_chart(total_counts_2, "Fraction of Occurrences: Gene Body, IG, and ENCODE Types", name+'_body2.png', nb = show_counts)
-        self.__annotation_chart(total_counts_3, "", name+'_repeat2.png', nb = show_counts)
-        self.__annotation_chart(total_counts_4, "", name+'_epic2.png', nb = show_counts)
-        self.__annotation_chart(total_counts_p4, "", name+'_epicP2.png', nb = show_counts)
+        self.__annotation_chart(total_counts_1, "Fraction of Occurrences: Gene Intron, Gene Exon, IG, and ENCODE Types", self.save_path+name+'_inex2.png', nb = show_counts)
+        self.__annotation_chart(total_counts_2, "Fraction of Occurrences: Gene Body, IG, and ENCODE Types", self.save_path+name+'_body2.png', nb = show_counts)
+        self.__annotation_chart(total_counts_3, "", self.save_path+name+'_repeat2.png', nb = show_counts)
+        self.__annotation_chart(total_counts_4, "", self.save_path+name+'_epic2.png', nb = show_counts)
+        self.__annotation_chart(total_counts_p4, "", self.save_path+name+'_epicP2.png', nb = show_counts)
         return [pd.DataFrame.from_dict(list(dict(total_counts_1).items())), pd.DataFrame.from_dict(list(dict(total_counts_2).items())), pd.DataFrame.from_dict(list(dict(total_counts_3).items())), pd.DataFrame.from_dict(list(dict(total_counts_4).items())), pd.DataFrame.from_dict(list(dict(total_counts_p4).items())), pd.DataFrame.from_dict(list(dict(total_gene).items()))]
     def __annotation_chart(self, data, title, fig_name, keep_small=False, nb = False):
         """
@@ -1135,7 +1135,7 @@ class Plots():
             labeldistance=1.1
         )
         plt.title(title, fontsize=16)
-        plt.savefig(fig_name, dpi=600, bbox_inches='tight')
+        plt.savefig(self.save_path+fig_name, dpi=600, bbox_inches='tight')
         plt.close('all')
     def __match_to_gene(self, positions_df, bed_file, name: str = "match_region_annotation"):
         """
