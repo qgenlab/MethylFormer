@@ -1,5 +1,5 @@
 from ..adapter.MethylationDMLAdapter import *
-
+import itertools
 
 class BenchmarkDMLManager:
     def __init__(self):
