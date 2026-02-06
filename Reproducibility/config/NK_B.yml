@@ -1,0 +1,17 @@
+# DMR files paths
+methylKit_dmr: /home/derbelh/analysis/DNA_data_pre/pipeline_project/methylkit/NK_B/new.methylkit..destranded.CpG.hg38.window.1000.step.500.cov.5.csv
+methylSig_dmr: /home/derbelh/analysis/DNA_data_pre/pipeline_project/methylSig/NK_B/new.methylSig..hg38.window.1000.filtered.csv
+DSS_dmr: /home/derbelh/analysis/DNA_data_pre/pipeline_project/dss/NK_B/new.dss.CpG.hg38DMR.csv
+DiffMethylTools_dmr: /home/derbelh/analysis/DNA_data_pre/v.0.0.3.3/v0.0.3/new_NK_B4/data/generate_DMR.csv_0.csv
+BSseq: /home/derbelh/analysis/DNA_data_pre/pipeline_project/bsseq/NK_B/new.dsseq..hg38.DMR.csv
+dl_dmr_040: /mnt/analysis/derbelh/DNA_data_pre/DMR_DL/MOND/new_DL_test/new_test_all_models_03_11/cohen_stdv2_0.075_fixed_sigma_data_1000_new2_smoothing_k_64/NK_B/pipeline_dmr_NK_B_min_040.csv
+dl_dmr_035: /mnt/analysis/derbelh/DNA_data_pre/DMR_DL/MOND/new_DL_test/new_test_all_models_03_11/cohen_stdv2_0.075_fixed_sigma_data_1000_new2_smoothing_k_64/NK_B/pipeline_dmr_NK_B_min_035.csv
+
+# DML files paths
+methylKit_dml: /home/derbelh/analysis/DNA_data_pre/pipeline_project/methylkit/NK_B/new.methylkit..destranded.CpG.hg38.non.window.cov.5.csv
+methylSig_dml: /home/derbelh/analysis/DNA_data_pre/pipeline_project/methylSig/NK_B/new.methylSig..hg38.non.window.csv
+DSS_dml: /home/derbelh/analysis/DNA_data_pre//pipeline_project/dss/NK_B/new.dss.CpG.hg38DML.csv
+DiffMethylTools_dml: /home/derbelh/analysis/DNA_data_pre/v.0.0.3.3/v0.0.3/new_NK_B4/data/filters.csv_0.csv
+dl_dml: /mnt/analysis/derbelh/DNA_data_pre/DMR_DL/MOND/new_DL_test/new_test_all_models_03_11/cohen_stdv2_0.075_fixed_sigma_data_1000_new2_smoothing_k_64/NK_B_all_res.csv 
+
+all_data: /home/derbelh/analysis/DNA_data_pre/v.0.0.3.3/v0.0.3/new_NK_B4/merged_data.csv
