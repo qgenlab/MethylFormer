@@ -5,6 +5,8 @@ from methadt.manager import *
 import pandas as pd
 import numpy as np
 import itertools
+from tqdm import tqdm
+
 
 if __name__ == "__main__":
     config = sys.argv[1]
