@@ -5,6 +5,7 @@ from methadt.manager import *
 import pandas as pd
 import numpy as np
 import itertools
+from tqdm import tqdm
 
 if __name__ == "__main__":
     config = sys.argv[1]
@@ -31,6 +32,9 @@ if __name__ == "__main__":
     
     dl_dmr_040 = pd.read_csv(files["dl_dmr_040"])
     dl_dmr_035 = pd.read_csv(files["dl_dmr_035"])
+
+    manager.add_tool(DiffMethylToolsDMRAdapter(dl_dmr_040), custom_name="dl_dmr_040")
+    manager.add_tool(DiffMethylToolsDMRAdapter(dl_dmr_035), custom_name="dl_dmr_035")
     
     abs_matrix, pct_matrix = manager.run_pairwise_comparison()
     
