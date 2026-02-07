@@ -1,8 +1,15 @@
 from ..adapter.MethylationDMLAdapter import *
+<<<<<<< HEAD
 import itertools
 from tqdm import tqdm
 import pandas as pd
 import numpy as np
+=======
+import pandas as pd
+import numpy as np
+import itertools
+from tqdm import tqdm
+>>>>>>> d13a786e1f7a671e85eba3e2531ac6f8e737006e
 
 class BenchmarkDMLManager:
     def __init__(self):
