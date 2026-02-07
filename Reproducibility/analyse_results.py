@@ -6,10 +6,6 @@ import pandas as pd
 import numpy as np
 import itertools
 from tqdm import tqdm
-<<<<<<< HEAD
-=======
-
->>>>>>> d13a786e1f7a671e85eba3e2531ac6f8e737006e
 
 if __name__ == "__main__":
     config = sys.argv[1]
