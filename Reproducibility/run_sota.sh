@@ -67,8 +67,8 @@ conda activate mekit
 
 echo "running Methylkit..."
 if [[ $input_format == "CR" ]]; then
-	ctr_list=$(ls $ctr/* | paste -sd "," -)
-	case_list=$(ls $case/* | paste -sd "," -)
+	ctr_list=$(ls $ctr | paste -sd "," -)
+	case_list=$(ls $case | paste -sd "," -)
 else
         ctr_list=$(ls $output/ctr/*converted.cytosine_report.txt | paste -sd "," -)
         case_list=$(ls $output/case/*converted.cytosine_report.txt | paste -sd "," -)
@@ -86,8 +86,8 @@ conda activate r441
 
 echo "running MethylSig..."
 if [[ $input_format == "CR" ]]; then
-        ctr_list=$(ls $ctr/* | paste -sd "," -)
-        case_list=$(ls $case/* | paste -sd "," -)
+        ctr_list=$(ls $ctr | paste -sd "," -)
+        case_list=$(ls $case | paste -sd "," -)
 else
         ctr_list=$(ls $output/ctr/*converted.cytosine_report.txt | paste -sd "," -)
         case_list=$(ls $output/case/*converted.cytosine_report.txt | paste -sd "," -)
@@ -100,8 +100,8 @@ Rscript $SCRIPT_DIR/run/run_methylSig.r --case "$case_list" --control "$ctr_list
 
 echo "running bsseq..."
 if [[ $input_format == "CR" ]]; then
-        ctr_list=$(ls $ctr/* | paste -sd "," -)
-        case_list=$(ls $case/* | paste -sd "," -)
+        ctr_list=$(ls $ctr | paste -sd "," -)
+        case_list=$(ls $case | paste -sd "," -)
 else
         ctr_list=$(ls $output/ctr/*converted.cytosine_report.txt | paste -sd "," -)
         case_list=$(ls $output/case/*converted.cytosine_report.txt | paste -sd "," -)
@@ -116,8 +116,8 @@ conda activate /mnt/analysis/derbelh/.local/share/mamba/envs/DiffMethylTools
 echo "running DiffMethylTools..."
 
 if [[ $input_format == "BED" ]]; then
-        ctr_list=$(ls $ctr/* | paste -sd " " -)
-        case_list=$(ls $case/* | paste -sd " " -)
+        ctr_list=$(ls $ctr | paste -sd " " -)
+        case_list=$(ls $case | paste -sd " " -)
 else
         ctr_list=$(ls $output/ctr/*_converted.bed | paste -sd " " -)
         case_list=$(ls $output/case/*_converted.bed | paste -sd " " -)
@@ -134,8 +134,8 @@ python $SCRIPT_DIR/../DiffMethylTools.py all_analysis --case_data_file $case_lis
 echo "running DiffMethylTools with Deep learning..."
 
 if [[ $input_format == "BED" ]]; then
-        ctr_list=$(ls $ctr/* | paste -sd " " -)
-        case_list=$(ls $case/* | paste -sd " " -)
+        ctr_list=$(ls $ctr | paste -sd " " -)
+        case_list=$(ls $case | paste -sd " " -)
 else
         ctr_list=$(ls $output/ctr/*_converted.bed | paste -sd " " -)
         case_list=$(ls $output/case/*_converted.bed | paste -sd " " -)
