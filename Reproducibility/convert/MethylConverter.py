@@ -33,10 +33,10 @@ class MethylConverter:
                              "thickStart", "thickEnd", "itemRgb", "cov", "blockSizes"]
                 self.df = pd.read_csv(self.input_file, sep='\t', header=None, names=col_names)
                 self.df = self.df.rename(columns={'chrom': 'chr', 'chromStart': 'pos'})
-                print("Warning: Input is standard BED (no coverage info). Assuming coverage=10 for conversion.")
+                print("Warning: Input is standard BED. Assuming coverage=9 for conversion.")
                 self.df['score'] = self.df['score'].clip(0, 1000)
-                self.df['met'] = (self.df['blockCount'] * (self.df['score'] / 1000)).round().astype(int)
-                self.df['unmet'] = self.df['blockCount'] - self.df['met']
+                self.df['met'] = (self.df['cov'] * (self.df['blockSizes'] / 100)).round().astype(int)
+                self.df['unmet'] = self.df['cov'] - self.df['met']
                 self.df['context'] = 'CG'
                 self.df['tri'] = 'CGC'
             else:
