@@ -1,3 +1,6 @@
+import pandas as pd
+import numpy as np
+
 def split_region_by_constraints(region_df, max_gap=500, min_cpgs=10, max_region_size=1000):
     region_df["RegionIndex"] = region_df["RegionIndex"].iloc[0] 
     base_index = float(region_df["RegionIndex"].iloc[0])
@@ -38,9 +41,8 @@ def split_region_by_constraints(region_df, max_gap=500, min_cpgs=10, max_region_
     
     
 
-dmr = pd.read_csv("./union_intersect_2.bed_with_counts_filtered_1kbp.bed", sep="\t", names=["chrom", "chromStart", "chromEnd"], usecols=[0,1,2])
-traning_set = pd.read_csv("./new_opt_ref_CpG_max_size_1000_min_gap_100_min_cpg_10.bed", sep="\t", names=["chrom", "chromStart", "chromEnd", "strand", "RegionIndex", "TAG"])
-
+dmr = pd.read_csv("tmp/union_intersect_2.bed_with_counts_filtered_1kbp.bed", sep="\t", names=["chrom", "chromStart", "chromEnd"], usecols=[0,1,2])
+traning_set = pd.read_csv("tmp/new_opt_ref_CpG_max_size_1000_min_gap_200_max_cpg_10.bed", sep="\t", names=["chrom", "chromStart", "chromEnd", "strand", "RegionIndex", "TAG"])
 
 region_tags = []
 
@@ -59,3 +61,5 @@ for e in region_tags:
     test = traning_set[traning_set["RegionIndex"] == e].copy()
     updated = split_region_by_constraints(test)
     traning_set.loc[updated.index] = updated
+    
+traning_set.to_csv("tmp/training_regions.bed", sep="\t", header=False, index=False)

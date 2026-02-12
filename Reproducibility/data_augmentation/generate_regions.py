@@ -1,7 +1,9 @@
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
+import sys
 
+######################################## Cluster CpGs into regions
 
 def assign_regions(data, max_gap=100, min_cpgs=3, max_region_size=1000):
     data = data.sort_values(["chrom", "chromStart"]).reset_index(drop=True)
@@ -51,7 +53,7 @@ def assign_regions(data, max_gap=100, min_cpgs=3, max_region_size=1000):
     return data
 
 
-def validate_cpg_regions(df, min_region_size=50, window_size=1000, min_cpgs=3, min_gap=100):
+def validate_cpg_regions(region_df, min_region_size=50, window_size=1000, min_cpgs=3, min_gap=100):
     positions = region_df["chromStart"].values
     idx = region_df.index
     region_span = positions.max() - positions.min()
@@ -80,12 +82,17 @@ def validate_cpg_regions(df, min_region_size=50, window_size=1000, min_cpgs=3, m
 
 
 
-f = "/mnt/analysis/derbelh/CpG_Without_Strand.bed"
+input_file = sys.argv[1]
+
+f = input_file # "tmp/CpG_Without_Strand.bed"
 data = pd.read_csv(f, sep="\t", names=["chrom", "chromStart", "chromEnd", "strand"])
 
 cpg = 10
 max_gap = 200
 
 result = assign_regions(data, max_gap=max_gap, min_cpgs=cpg)
+result = validate_cpg_regions(result)
 
-result.to_csv("/home/derbelh/analysis/DNA_data_pre/DMR_DL/MOND/processed/new_opt_ref_CpG_max_size_1000_min_gap_"+str(max_gap)+"_max_cpg_"+str(cpg)+".bed", sep="\t", header=False, index=False)
+result.to_csv("tmp/new_opt_ref_CpG_max_size_1000_min_gap_"+str(max_gap)+"_max_cpg_"+str(cpg)+".bed", sep="\t", header=False, index=False)
+
+
