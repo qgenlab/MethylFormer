@@ -163,21 +163,33 @@ colData(bismarkBSseq) <- DataFrame(SampleType = sample_info$SampleType)
 
 bismarkBSseq.cov <- getCoverage(bismarkBSseq.fit)
 
-keepLoci.ex <- which(rowSums(bismarkBSseq.cov[, bismarkBSseq$SampleType == type_1[0]] >= cov1) >= spcov1 &
-                     rowSums(bismarkBSseq.cov[, bismarkBSseq$SampleType == type_2[0]] >= cov2) >= spcov2)
+keepLoci.ex <- which(rowSums(bismarkBSseq.cov[, bismarkBSseq$SampleType == type_1[1]] >= cov1) >= spcov1 &
+                     rowSums(bismarkBSseq.cov[, bismarkBSseq$SampleType == type_2[1]] >= cov2) >= spcov2)
 
 
 sampleNames(bismarkBSseq.fit) <- sample_info$SampleNames
+
+bismarkBSseq.fit <- bismarkBSseq.fit[keepLoci.ex, ]
 
 # print(sampleNames(bismarkBSseq.fit))
 print(class_2)
 print(class_1)
 
+# 1. Check if R can actually find your samples
+count_group1 <- sum(bismarkBSseq$SampleType == type_1[1])
+print(paste("Number of samples found for Group 1:", count_group1))
+
+# 2. Check strictness
+print(paste("You are requiring coverage in at least", spcov1, "samples."))
+
+# IF count_group1 is 0 -> It's a Naming/Typo error (Reason #1).
+# IF count_group1 is equal to spcov1 -> It's a "Weakest Link" error (Reason #2).
+
 
 bismarkBSseq.tstat <- BSmooth.tstat(bismarkBSseq.fit,
                                     group1 = class_2,
                                     group2 = class_1,
-                                    estimate.var = "group2",
+                                    estimate.var ="same", # "group2",
                                     local.correct = TRUE,
                                     verbose = TRUE,
                                     mc.cores= 18)
