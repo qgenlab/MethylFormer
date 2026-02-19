@@ -91,7 +91,7 @@ cpg = 10
 max_gap = 200
 
 result = assign_regions(data, max_gap=max_gap, min_cpgs=cpg)
-result = validate_cpg_regions(result)
+# result = validate_cpg_regions(result)
 
 result.to_csv("tmp/new_opt_ref_CpG_max_size_1000_min_gap_"+str(max_gap)+"_max_cpg_"+str(cpg)+".bed", sep="\t", header=False, index=False)
 

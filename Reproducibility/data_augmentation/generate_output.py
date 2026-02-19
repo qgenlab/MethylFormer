@@ -64,14 +64,14 @@ def cohens_d(x, y, min_std=0.075):
 
 def process_diff(diff):
     print(f"Processing diff {diff}")
-    pattern = f"tmp/smoothed_new_destranded_*_5mc.new.methyl1_filtered_1.CpG_diff_{diff}_.bed"
+    pattern = f"tmp/smoothed_filtered_095_new_destranded_*_5mc.new.methyl1_filtered_1.CpG_diff_{diff}_.bed"
     inputs = glob.glob(pattern)
     df_diffs = []
     for i, input_fd in enumerate(inputs):
         df = pd.read_csv(
             input_fd, sep="\t", header=None,
             names=["chrom", "start", "end", f"cov_case_{i}",  f"meth_case_{i}", f"noise_{i}"],
-            usecols=[0, 1, 2, 3,  6, 7]
+            usecols=[0, 1, 2, 3,  4, 5]
         )
         df_diffs.append(df)
     df_new = reduce(lambda left, right: pd.merge(left, right, on=["chrom", "start", "end"], how="outer"), df_diffs)
@@ -87,16 +87,16 @@ def process_diff(diff):
     #]
     res_cohen = all_data[["chrom", "start", "end", "cohen_d"]]
     res_cohen["cohen_d_norm"] = res_cohen["cohen_d"] / np.sqrt(res_cohen["cohen_d"]**2 + 4)
-    out_path = f"case/res_{diff}.csv"
+    out_path = f"tmp/res_{diff}.csv"
     res_cohen.to_csv(out_path, sep="\t", header=None, index=False)
     print(f"Saved: {out_path}")
 
 diffs = [-75, -60, -45, -30, -15, -5, 5, 15, 30, 45, 60, 75]
-input_files = "ctr/new_destranded_*_5mc.new.methyl1_filtered_1.CpG.bed"
+input_files = "ctr/new_destranded_*_.bed"
 files_zero = glob.glob(input_files)
 dfs = []
 for i, f in enumerate(files_zero):
-    df = pd.read_csv(f, sep="\t", header=None, names=["chrom", "start", "end", f"cov_ctr_{i}", f"meth_ctr_{i}"], usecols=[0, 1, 2, 9, 10])
+    df = pd.read_csv(f, sep="\t", header=None, names=["chrom", "start", "end", f"cov_ctr_{i}", f"meth_ctr_{i}"], usecols=[0, 1, 2, 3, 4])
     dfs.append(df)
 
 

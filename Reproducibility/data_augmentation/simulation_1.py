@@ -33,20 +33,12 @@ for f in inputs:
         epsilon = truncnorm.rvs(-1,1, loc=0, scale=5, size=new_df.shape[0]).tolist() # np.random.normal(loc=0, scale=5, size=new_df.shape[0]).tolist()
         new_df["blockSizes"] += epsilon
         new_df["coverage"] = simulate_coverage_from_methylation(new_df["coverage"], epsilon , base_stdv=0.5)
+        new_df['status'] = np.where((new_df["blockSizes"] > 105) | (new_df["blockSizes"] < -5), 1, 0)
+        # out_name = os.path.splitext("tmp/" + os.path.basename(f)[0] + "_diff_" + str(diff) + "_.bed")
+        base_name = os.path.splitext(os.path.basename(f))[0]
+        out_name = "tmp/" + base_name + "_diff_" + str(diff) + "_.bed"
         print(new_df)
         print(data)
-        new_df.to_csv(os.path.splitext("tmp/"+os.path.basename(f))[0] + "_diff_" + str(diff)+"_.bed", index=False, header=False)
+        new_df.to_csv(out_name, sep="\t", index=False, header=False)
 
-
-
-all_files = glob.glob("tmp/new_destranded_*_5mc.new.methyl1_filtered_1.CpG_diff_*_.bed")
-
-# inputs = [f for f in all_files if re.search(r'CpG_diff_(-?5)_', f)]
-
-inputs = glob.glob("tmp/*_diff_*.bed")
-
-for f in inputs:
-    data = pd.read_csv(f,  names = ["chrom", "chromStart", "chromEnd", "coverage", "blockSizes"])
-    data['status'] = np.where((data["blockSizes"] > 105) | (data["blockSizes"] < -5), 1, 0)
-    data.to_csv(f"{f}", sep="\t",  header=False, index=False)
 

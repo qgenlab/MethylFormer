@@ -1,12 +1,15 @@
 import os
 from multiprocessing import Pool
+import glob
+import pandas as pd
+import numpy as np
 
 def generate_data(args):
-    file, regions_file_path, size_region = args
+    file_, regions_file_path, size_region = args
     regions = []
-    base_name = os.path.basename(file)
+    base_name = os.path.basename(file_)
     print(f"Processing {base_name}")
-    data_file = pd.read_csv(file, sep="\t", names=["chrom", "chromStart", "chromEnd", "coverage", "Methylation", "TAG_y"])
+    data_file = pd.read_csv(file_, names=["chrom", "chromStart", "chromEnd", "coverage", "Methylation", "TAG_y"], sep="\t")
     regions_file = pd.read_csv(regions_file_path, sep="\t", names=["chrom", "chromStart", "chromEnd", "strand", "RegionIndex", "TAG_x"])
     dataset = pd.merge(data_file, regions_file, on=["chrom", "chromStart", "chromEnd"], how='inner')
     dataset["TAG"] = dataset["TAG_x"] + dataset["TAG_y"]
@@ -23,7 +26,7 @@ def generate_data(args):
     combined = pd.concat(regions, ignore_index=True)
     combined.loc[(combined["Methylation"] > -5) & (combined["Methylation"] < 0), 'Methylation'] = 0
     combined.loc[(combined["Methylation"] > 100) & (combined["Methylation"] < 105), 'Methylation'] = 100
-    output_path = f"~/analysis/DNA_data_pre/DMR_DL/MOND/input_files/filtered_{str(size_region).replace('.', '')}_{base_name}"
+    output_path = f"tmp/filtered_{str(size_region).replace('.', '')}_{base_name}"
     combined.to_csv(os.path.expanduser(output_path), sep="\t", header=False, index=False)
 
 
@@ -31,15 +34,15 @@ def generate_data(args):
 
 
 
-files = glob.glob("../new_destranded_*_5mc.new.methyl1_filtered_1.CpG_diff_*_.bed")
+files = glob.glob("tmp/new_destranded_*_5mc.new.methyl1_filtered_1.CpG_diff_*_.bed")
 
-# regions_file_path = "../final_regions.csv"
+regions_file_path = "tmp/training_regions.bed"
 
 
 
 size_region = 0.95
 
-args_list = [(file, regions_file_path, size_region) for file in files]
+args_list = [(file_, regions_file_path, size_region) for file_ in files]
 
 
 num_threads = 20
