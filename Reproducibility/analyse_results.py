@@ -6,53 +6,64 @@ import pandas as pd
 import numpy as np
 import itertools
 from tqdm import tqdm
+from pathlib import Path
+
+
 
 if __name__ == "__main__":
-    config = sys.argv[1]
-    with open(config, 'r') as f:
+    config = sys.argv[1]+"/"
+    # output_folder = sys.argv[2]
+    with open(f"{config}config.yml", 'r') as f:
         files = yaml.full_load(f)
 
     # DMR analysis script
     manager = BenchmarkDMRManager()
-    df_mk = pd.read_csv(files["methylKit_dmr"])
+    df_mk = pd.read_csv(config+files["methylKit_dmr"])
     manager.add_tool(MethylKitDMRAdapter(df_mk[df_mk["qvalue"] <= 0.01]), custom_name="MethylKit_q0.01")
     manager.add_tool(MethylKitDMRAdapter(df_mk[(df_mk["qvalue"] <= 0.01) & (df_mk["meth.diff"].abs() >= 25)]), custom_name="MethylKit_HighDiff")
     
-    df_ms = pd.read_csv(files["methylSig_dmr"])
-    manager.add_tool(MethylSigDMRAdapter(df_ms), custom_name="MethylSig")
+    df_ms = pd.read_csv(config+files["methylSig_dmr"])
+    manager.add_tool(MethylSigDMRAdapter(df_ms[df_ms["fdr"] <= 0.05]), custom_name="MethylSig")
     
-    df_dss = pd.read_csv(files["DSS_dmr"])
+    df_dss = pd.read_csv(config+files["DSS_dmr"])
     manager.add_tool(DSSDMRAdapter(df_dss), custom_name="DSS")
     
-    diffMethylTools = pd.read_csv(files["DiffMethylTools_dmr"])
-    manager.add_tool(DiffMethylToolsDMRAdapter(diffMethylTools), custom_name="diffMethylTools")
+    diffMethylTools = pd.read_csv(config+files["DiffMethylTools_dmr"])
+    manager.add_tool(DiffMethylToolsDMRAdapter(diffMethylTools), custom_name="DiffMethylTools_dmr")
     
-    bsseq = pd.read_csv(files["BSseq"])
+    bsseq = pd.read_csv(config+files["BSseq"])
     manager.add_tool(BSSeqDMRAdapter(bsseq), custom_name="bsseq")
     
-    dl_dmr_040 = pd.read_csv(files["dl_dmr_040"])
-    dl_dmr_035 = pd.read_csv(files["dl_dmr_035"])
+    #dl_dmr_040 = pd.read_csv(config+files["dl_dmr_040"])
+    dl_dmr_035 = pd.read_csv(config+files["dl_dmr_035"])
 
-    manager.add_tool(DiffMethylToolsDMRAdapter(dl_dmr_040), custom_name="dl_dmr_040")
+    #manager.add_tool(DiffMethylToolsDMRAdapter(dl_dmr_040), custom_name="dl_dmr_040")
     manager.add_tool(DiffMethylToolsDMRAdapter(dl_dmr_035), custom_name="dl_dmr_035")
     
     abs_matrix, pct_matrix = manager.run_pairwise_comparison()
+
+    output_folder = f"{config}/results"
     
+    folder_path = Path(output_folder)
+    folder_path.mkdir(parents=True, exist_ok=True)
+
     print("--- Absolute Overlap (BP) ---")
     print(abs_matrix)
+    abs_matrix.to_csv(output_folder+"/dmr_all.csv")
     
     print("\n--- Percentage Overlap (%) ---")
     print(pct_matrix)
+    pct_matrix.to_csv(output_folder+"/dmr_all_perc.csv")
 
 
     # DML analysis script
     
-    DiffMethylTools_dml = pd.read_csv(files["DiffMethylTools_dml"])
-    dss_dml = pd.read_csv(files["DSS_dml"])
-    methylkit = pd.read_csv(files["methylKit_dml"])
-    methylSig = pd.read_csv(files["methylSig_dml"])
-    DL0075_new2_k_64 = pd.read_csv(files["dl_dml"])
-    data_all = pd.read_csv(files["all_data"])
+    DiffMethylTools_dml = pd.read_csv(config+files["DiffMethylTools_dml"])
+    dss_dml = pd.read_csv(config+files["DSS_dml"])
+    methylkit = pd.read_csv(config+files["methylKit_dml"])
+    methylSig = pd.read_csv(config+files["methylSig_dml"])
+    DL0075_new2_k_64 = pd.read_csv(config+files["dl_dml"])
+    data_all = pd.read_csv(config+files["all_data"])
     
     
     adapters_raw = [
@@ -61,7 +72,6 @@ if __name__ == "__main__":
         MethylSigDMLAdapter(methylSig[methylSig["fdr"] <= 0.05], "q0.05"),
         DSSDMLAdapter(dss_dml[dss_dml["fdr"] <= 0.05], "fdr0.05"),
         DiffMethylToolsDMLAdapter(DiffMethylTools_dml[DiffMethylTools_dml["q-value"] <= 0.05], "q0.05"),
-        DLModelDMLAdapter(DL0075_new2_k_64[DL0075_new2_k_64["hedges_g"].abs() >= 0.40], "0.40"),
         DLModelDMLAdapter(DL0075_new2_k_64[DL0075_new2_k_64["hedges_g"].abs() >= 0.35], "0.35"),
     ]
     
@@ -74,6 +84,8 @@ if __name__ == "__main__":
     abs_mat, pct_mat = manager_simple.run_pairwise_comparison()
     print(pct_mat)
     
+    abs_mat.to_csv(output_folder+"/dml_all.csv")
+    pct_mat.to_csv(output_folder+"/dml_all_perc.csv")
     
     
     manager_no_isol = BenchmarkDMLManager()
@@ -88,6 +100,10 @@ if __name__ == "__main__":
     print("--- Scenario 2: Non-Isolated Overlap ---")
     abs_mat_ni, pct_mat_ni = manager_no_isol.run_pairwise_comparison()
     print(pct_mat_ni)
+
+    abs_mat_ni.to_csv(output_folder+"/dml_non_isolated.csv")
+    pct_mat_ni.to_csv(output_folder+"/dml_non_isolated_perc.csv")
+
         
     manager_in_dmr = BenchmarkDMLManager()
     pairs_to_process = [
@@ -96,8 +112,7 @@ if __name__ == "__main__":
         (adapters_raw[2], MethylSigDMRAdapter(df_ms)),
         (adapters_raw[3], DSSDMRAdapter(df_dss)),
         (adapters_raw[4], DiffMethylToolsDMRAdapter(diffMethylTools)),
-        (adapters_raw[5], DiffMethylToolsDMRAdapter(dl_dmr_040)),
-        (adapters_raw[6], DiffMethylToolsDMRAdapter(dl_dmr_035)),
+        (adapters_raw[5], DiffMethylToolsDMRAdapter(dl_dmr_035)),
     ]
     
     print("--- Filtering DMLs by DMR Regions ---")
@@ -111,5 +126,6 @@ if __name__ == "__main__":
     abs_mat_id, pct_mat_id = manager_in_dmr.run_pairwise_comparison()
     print(pct_mat_id)
     
-    
-    
+    abs_mat_id.to_csv(output_folder+"/dml_clustered.csv")
+    pct_mat_id.to_csv(output_folder+"/dml_clustered_perc.csv")
+

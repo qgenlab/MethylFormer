@@ -8,7 +8,7 @@ Help()
    echo
    echo "Syntax: ./run.sh [-t|i|f|o|r|a|b|s]"
    echo "options:"
-   echo "t     Number of threads. [default=4]"
+   echo "t     Number of threads. [Not yet implemented]"
    echo "i     The input file format. [PS: BED for bed format, CR for Bismark CpG Report or MB for methylBase (methylKit) format]"
    echo "a     The input case folder."
    echo "r     The input ctr folder."
@@ -31,7 +31,6 @@ done
 
 echo $threads $input_format $case $ctr $output
 
-echo "" > $output/config.yml
 
 
 SCRIPT_DIR=$(dirname "$0")
@@ -39,6 +38,11 @@ SCRIPT_DIR=$(dirname "$0")
 mkdir -p "$output"
 mkdir -p "$output/case"
 mkdir -p "$output/ctr"
+
+
+echo "" > $output/config.yml
+
+
 #
 #
 echo "Converting files..."
@@ -109,8 +113,8 @@ Rscript $SCRIPT_DIR/run/run_methylSig.r --case "$case_list" --control "$ctr_list
 Rscript $SCRIPT_DIR/run/run_methylSig.r --case "$case_list" --control "$ctr_list" --cov 10 --spcov1 1 --spcov2 1 -w TRUE --output $output/methylsig/
 
 
-echo "methylsit_dml: "$output/methylsig/new2.methylSig..hg38.non.window.csv >> $output/config.yml
-echo "methylsit_dmr: "$output/methylsig/new2.methylSig..hg38.window.1000.csv >> $output/config.yml
+echo "methylSig_dml: "$output/methylsig/new2.methylSig..hg38.non.window.csv >> $output/config.yml
+echo "methylSig_dmr: "$output/methylsig/new2.methylSig..hg38.window.1000.csv >> $output/config.yml
 
 
 
@@ -167,9 +171,9 @@ mkdir -p $output/DiffMethylTools_dl/
 python $SCRIPT_DIR/../DiffMethylTools.py all_analysis_dl --case_data_file $case_list --ctr_data_file $ctr_list --input_format BED --ref_folder hg38 --model_path $SCRIPT_DIR/../bin/DL_model_state.pth --results_path $output/DiffMethylTools_dl/
 
 # echo "dl_dmr_040: "$output/DiffMethylTools_dl/data/ >> $output/config.yml
-echo "dl_dmr_035: "$output/DiffMethylTools_dl/data/filters_dl.csv >> $output/config.yml
+echo "dl_dml: "$output/DiffMethylTools_dl/data/filters_dl.csv >> $output/config.yml
 
-echo "dl_dml: "$output/DiffMethylTools_dl/data/generate_DMR_0.csv >> $output/config.yml
+echo "dl_dmr_035: "$output/DiffMethylTools_dl/data/generate_DMR_0.csv >> $output/config.yml
 
 
-echo "all_data: "$output/DiffMethylTools/data/merge_tables.csv
+echo "all_data: "$output/DiffMethylTools/data/merge_tables.csv >> $output/config.yml
