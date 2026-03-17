@@ -18,24 +18,24 @@ if __name__ == "__main__":
 
     # DMR analysis script
     manager = BenchmarkDMRManager()
-    df_mk = pd.read_csv(config+files["methylKit_dmr"])
+    df_mk = pd.read_csv(config+files["methylKit_dmr"].split("//", 1)[1])
     manager.add_tool(MethylKitDMRAdapter(df_mk[df_mk["qvalue"] <= 0.01]), custom_name="MethylKit_q0.01")
     manager.add_tool(MethylKitDMRAdapter(df_mk[(df_mk["qvalue"] <= 0.01) & (df_mk["meth.diff"].abs() >= 25)]), custom_name="MethylKit_HighDiff")
     
-    df_ms = pd.read_csv(config+files["methylSig_dmr"])
+    df_ms = pd.read_csv(config+files["methylSig_dmr"].split("//", 1)[1])
     manager.add_tool(MethylSigDMRAdapter(df_ms[df_ms["fdr"] <= 0.05]), custom_name="MethylSig")
     
-    df_dss = pd.read_csv(config+files["DSS_dmr"])
+    df_dss = pd.read_csv(config+files["DSS_dmr"].split("//", 1)[1])
     manager.add_tool(DSSDMRAdapter(df_dss), custom_name="DSS")
     
-    diffMethylTools = pd.read_csv(config+files["DiffMethylTools_dmr"])
+    diffMethylTools = pd.read_csv(config+files["DiffMethylTools_dmr"].split("//", 1)[1])
     manager.add_tool(DiffMethylToolsDMRAdapter(diffMethylTools), custom_name="DiffMethylTools_dmr")
     
-    bsseq = pd.read_csv(config+files["BSseq"])
+    bsseq = pd.read_csv(config+files["BSseq"].split("//", 1)[1])
     manager.add_tool(BSSeqDMRAdapter(bsseq), custom_name="bsseq")
     
     #dl_dmr_040 = pd.read_csv(config+files["dl_dmr_040"])
-    dl_dmr_035 = pd.read_csv(config+files["dl_dmr_035"])
+    dl_dmr_035 = pd.read_csv(config+files["dl_dmr_035"].split("//", 1)[1])
 
     #manager.add_tool(DiffMethylToolsDMRAdapter(dl_dmr_040), custom_name="dl_dmr_040")
     manager.add_tool(DiffMethylToolsDMRAdapter(dl_dmr_035), custom_name="dl_dmr_035")
@@ -58,12 +58,12 @@ if __name__ == "__main__":
 
     # DML analysis script
     
-    DiffMethylTools_dml = pd.read_csv(config+files["DiffMethylTools_dml"])
-    dss_dml = pd.read_csv(config+files["DSS_dml"])
-    methylkit = pd.read_csv(config+files["methylKit_dml"])
-    methylSig = pd.read_csv(config+files["methylSig_dml"])
-    DL0075_new2_k_64 = pd.read_csv(config+files["dl_dml"])
-    data_all = pd.read_csv(config+files["all_data"])
+    DiffMethylTools_dml = pd.read_csv(config+files["DiffMethylTools_dml"].split("//", 1)[1])
+    dss_dml = pd.read_csv(config+files["DSS_dml"].split("//", 1)[1])
+    methylkit = pd.read_csv(config+files["methylKit_dml"].split("//", 1)[1])
+    methylSig = pd.read_csv(config+files["methylSig_dml"].split("//", 1)[1])
+    DL0075_new2_k_64 = pd.read_csv(config+files["dl_dml"].split("//", 1)[1])
+    data_all = pd.read_csv(config+files["all_data"].split("//", 1)[1])
     
     
     adapters_raw = [
