@@ -2,6 +2,7 @@ import pandas as pd
 import glob
 import os
 from pathlib import Path
+import numpy as np
 
 current_dir = Path.cwd()
 TOOLS = ["BSseq", "DiffMethylTools", "dl_dmr", "DSS", "methylKit", "methylSig"]
@@ -12,7 +13,7 @@ column_map = {
     'dss': 13,
     'methylkit': 7,
     'methylSig': 7,
-    'dl_dmr_035_generate_DMR_0': 14,
+    'dl_dmr_030_generate_DMR_0': 14,
     'DiffMethylTools_dmr_generate_DMR_0': 14
 }
 
@@ -60,16 +61,143 @@ def load_regulatory_ids(files):
             print(f"Error reading {filename}: {e}")
     return results
 
-def load_ground_truth(filepath):
+
+
+######################## Use merged_data to get avg diff!!!!!!!!!!!!!!!!!!!!!! (Not done yet)
+
+#def load_ground_truth(filepath, merged_data = None):
+#    """Loads the benchmark file created by Script 1 and maps it back to string IDs safely"""
+#    if not os.path.exists(filepath): return set(), 0
+#    
+#    try:
+#        df = pd.read_csv(filepath, sep='\t', header=None)
+#        if df.empty: return set(), 0
+#        merged_ids = df[0].astype(str) + ":" + df[1].astype(str) + ":" + df[2].astype(str) + ":" + df[3].astype(str)
+#        return set(merged_ids), len(merged_ids)
+#    except pd.errors.EmptyDataError:
+#        return set(), 0  # Handles case where the CSV was created but is completely empty
+
+
+def load_ground_truth(filepath, merged_data=None, diff=0.1):
     """Loads the benchmark file created by Script 1 and maps it back to string IDs safely"""
-    if not os.path.exists(filepath): return set(), 0
+    if not os.path.exists(filepath): 
+        return set(), 0
     try:
+        # Load the target regions
         df = pd.read_csv(filepath, sep='\t', header=None)
-        if df.empty: return set(), 0
-        merged_ids = df[0].astype(str) + ":" + df[1].astype(str) + ":" + df[2].astype(str) + ":" + df[3].astype(str)
-        return set(merged_ids), len(merged_ids)
+        if df.empty: 
+            return set(), 0
+        # Create the merged IDs immediately
+        df['merged_id'] = df[0].astype(str) + ":" + df[1].astype(str) + ":" + df[2].astype(str) + ":" + df[3].astype(str)
+        valid_ids = set(df['merged_id'])
     except pd.errors.EmptyDataError:
         return set(), 0  # Handles case where the CSV was created but is completely empty
+    # --- FILTERING STEP ---
+    if merged_data is not None and os.path.exists(merged_data):
+        try:
+            # Load the individual CpG positions
+            pos_df = pd.read_csv(merged_data, sep=',')
+            # Sort by position (critical for binary search)
+            pos_df = pos_df.sort_values(by='chromStart')
+            # Group by chromosome into fast numpy arrays
+            pos_dict = {}
+            diff_dict = {}
+            for chrom, group in pos_df.groupby('chrom'):
+                pos_dict[chrom] = group['chromStart'].values
+                diff_dict[chrom] = group['diff'].values
+            invalid_regions = set()
+            # zip() is used here instead of df.iterrows() because it is about 100x faster!
+            for chrom, start, end, merged_id in zip(df[0], df[1], df[2], df['merged_id']):
+                if chrom in pos_dict:
+                    pos_array = pos_dict[chrom]
+                    diff_array = diff_dict[chrom]
+                    # Instantly find overlapping positions
+                    idx_start = np.searchsorted(pos_array, start, side='left')
+                    idx_end = np.searchsorted(pos_array, end, side='left')
+                    if idx_start < idx_end:
+                        region_diffs = diff_array[idx_start:idx_end]
+                        avg_diff = region_diffs.mean()
+                        # Use abs() to ensure we keep strong hypomethylation (negative values)
+                        if abs(avg_diff) <= diff:
+                            invalid_regions.add(merged_id)
+            # Mathematically subtract the invalid regions
+            print("-------------------------Invalid_regions-----------------------")
+            print(invalid_regions)
+            valid_ids = valid_ids - invalid_regions
+        except Exception as e:
+            print(f"Error processing merged_data: {e}")
+    return valid_ids, len(valid_ids)
+
+#def load_ground_truth(filepath, merged_data=None, diff=0.1):
+#    """Loads the benchmark file created by Script 1 and maps it back to string IDs safely"""
+#    if not os.path.exists(filepath):
+#        return set(), 0
+#    try:
+#        df = pd.read_csv(filepath, sep='\t', header=None)
+#        if df.empty:
+#            return set(), 0
+#        df['merged_id'] = df[0].astype(str) + ":" + df[1].astype(str) + ":" + df[2].astype(str) + ":" + df[3].astype(str)
+#        valid_ids = set(df['merged_id'])
+#    except pd.errors.EmptyDataError:
+#        return set(), 0
+#
+#    # --- DIAGNOSTIC FILTERING STEP ---
+#    if merged_data is not None:
+#        print(f"\n[DEBUG] Checking diff file: {merged_data}")
+#
+#        if not os.path.exists(merged_data):
+#            print("❌ ERROR: merged_data file DOES NOT EXIST at this path. Skipping filter.")
+#        else:
+#            print("✅ File found! Loading data...")
+#            try:
+#                pos_df = pd.read_csv(merged_data, sep=',')
+#                pos_df = pos_df.sort_values(by='chromStart')
+#
+#                pos_dict = {}
+#                diff_dict = {}
+#                for chrom, group in pos_df.groupby('chrom'):
+#                    pos_dict[chrom] = group['chromStart'].values
+#                    diff_dict[chrom] = group['diff'].values
+#
+#                invalid_regions = set()
+#                overlaps_found = 0
+#                chrom_matches_found = 0
+#
+#                # Print samples of the chromosome names to check for 'chr1' vs '1' mismatch
+#                print(f"📊 Sample GT Chromosomes: {list(set(df[0]))[:3]}")
+#                print(f"📊 Sample CSV Chromosomes: {list(pos_dict.keys())[:3]}")
+#
+#                for chrom, start, end, merged_id in zip(df[0], df[1], df[2], df['merged_id']):
+#                    if chrom in pos_dict:
+#                        chrom_matches_found += 1
+#                        pos_array = pos_dict[chrom]
+#                        diff_array = diff_dict[chrom]
+#
+#                        idx_start = np.searchsorted(pos_array, start, side='left')
+#                        idx_end = np.searchsorted(pos_array, end, side='left')
+#
+#                        if idx_start < idx_end:
+#                            overlaps_found += 1
+#                            region_diffs = diff_array[idx_start:idx_end]
+#                            avg_diff = region_diffs.mean()
+#
+#                            if abs(avg_diff) <= diff:
+#                                invalid_regions.add(merged_id)
+#
+#                print(f"🔍 Total GT Regions: {len(df)}")
+#                print(f"🔍 Regions with matching Chromosomes: {chrom_matches_found}")
+#                print(f"🔍 Regions with CpG overlaps found: {overlaps_found}")
+#                print(f"⚠️ Total Flagged Invalid: {len(invalid_regions)}")
+#                print("-------------------------Invalid_regions-----------------------")
+#                print(invalid_regions)
+#
+#                valid_ids = valid_ids - invalid_regions
+#            except Exception as e:
+#                print(f"❌ Error processing merged_data: {e}")
+#
+#    return valid_ids, len(valid_ids)
+
+
 
 def calculate_tps(tool_results, gt_set):
     """Intersects each tool's IDs with the ground truth IDs to find TPs"""
@@ -85,7 +213,7 @@ def calculate_tps(tool_results, gt_set):
 b_monocytes_files = [
     f"{current_dir}/results/Monocyte_B/BSseq_new2.dsseq..hg38.DMR.005.bed",
     f"{current_dir}/results/Monocyte_B/DiffMethylTools_dmr_generate_DMR_0.005.bed",
-    f"{current_dir}/results/Monocyte_B/dl_dmr_035_generate_DMR_0.005.bed",
+    f"{current_dir}/results/Monocyte_B/dl_dmr_030_generate_DMR_0.005.bed",
     f"{current_dir}/results/Monocyte_B/DSS_dmr_new2.dss.CpG.hg38DMR.005.bed",
     f"{current_dir}/results/Monocyte_B/methylKit_dmr_new2.methylkit..destranded.CpG.hg38.window.1000.step.500.cov.10.005.bed",
     f"{current_dir}/results/Monocyte_B/methylSig_dmr_new2.methylSig..hg38.window.1000.005.bed"
@@ -94,7 +222,7 @@ b_monocytes_files = [
 b_nk_files = [
     f"{current_dir}/results/NK_B/BSseq_new2.dsseq..hg38.DMR.005.bed",
     f"{current_dir}/results/NK_B/DiffMethylTools_dmr_generate_DMR_0.005.bed",
-    f"{current_dir}/results/NK_B/dl_dmr_035_generate_DMR_0.005.bed",
+    f"{current_dir}/results/NK_B/dl_dmr_030_generate_DMR_0.005.bed",
     f"{current_dir}/results/NK_B/DSS_dmr_new2.dss.CpG.hg38DMR.005.bed",
     f"{current_dir}/results/NK_B/methylKit_dmr_new2.methylkit..destranded.CpG.hg38.window.1000.step.500.cov.10.005.bed",
     f"{current_dir}/results/NK_B/methylSig_dmr_new2.methylSig..hg38.window.1000.005.bed"
@@ -103,16 +231,16 @@ b_nk_files = [
 nk_monocytes_files = [
     f"{current_dir}/results/Monocyte_NK/BSseq_new2.dsseq..hg38.DMR.005.bed",
     f"{current_dir}/results/Monocyte_NK/DiffMethylTools_dmr_generate_DMR_0.005.bed",
-    f"{current_dir}/results/Monocyte_NK/dl_dmr_035_generate_DMR_0.005.bed",
+    f"{current_dir}/results/Monocyte_NK/dl_dmr_030_generate_DMR_0.005.bed",
     f"{current_dir}/results/Monocyte_NK/DSS_dmr_new2.dss.CpG.hg38DMR.005.bed",
     f"{current_dir}/results/Monocyte_NK/methylKit_dmr_new2.methylkit..destranded.CpG.hg38.window.1000.step.500.cov.10.005.bed",
     f"{current_dir}/results/Monocyte_NK/methylSig_dmr_new2.methylSig..hg38.window.1000.005.bed"
 ]
 
 print("Loading ground truth sets from generated CSVs...")
-gt_set_b_mono, gt_len_b_mono = load_ground_truth(f"{current_dir}/results/Monocyte_B_benchmark_3_tools.csv")
-gt_set_nk_b, gt_len_nk_b = load_ground_truth(f"{current_dir}/results/NK_B_benchmark_3_tools.csv")
-gt_set_mono_nk, gt_len_mono_nk = load_ground_truth(f"{current_dir}/results/Monocyte_NK_benchmark_3_tools.csv")
+gt_set_b_mono, gt_len_b_mono = load_ground_truth(f"{current_dir}/results/Monocyte_B_benchmark_3_tools.csv", merged_data = f"{current_dir}/../B_Monocytes_res/DiffMethylTools_dl/data/merge_tables.csv")
+gt_set_nk_b, gt_len_nk_b = load_ground_truth(f"{current_dir}/results/NK_B_benchmark_3_tools.csv", merged_data = f"{current_dir}/../B_NK/DiffMethylTools_dl/data/merge_tables.csv")
+gt_set_mono_nk, gt_len_mono_nk = load_ground_truth(f"{current_dir}/results/Monocyte_NK_benchmark_3_tools.csv", merged_data = f"{current_dir}/../NK_Monocytes_res/DiffMethylTools_dl/data/merge_tables.csv")
 
 print("Calculating True Positives (TPs)...")
 tp_b_mono = calculate_tps(load_regulatory_ids(b_monocytes_files), gt_set_b_mono)
