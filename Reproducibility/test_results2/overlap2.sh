@@ -26,7 +26,15 @@ mkdir -p results/B_NK/
 for f in dataset/DMRs/B_NK/*bed; do
   echo "$f";
 
+  base_f=$(basename "$f" .bed)
+
   bedtools intersect -a "$f" -b dataset/positive/NK_B/positive_data_filtered_edited.bed -F 0.05 -wo > "results/B_NK/$base_f.005.bed"
+  echo "**********************************************************************"
+  
+  bedtools intersect -a "$f" -b dataset/positive/NK_B/positive_data_filtered_edited.bed -F 0.05 -wo
+
+  echo "**********************************************************************"
+
   # bedtools intersect -a $f -b dataset/positive/NK_B/positive_data_filtered.bed -F 0.05 -wo > results/B_NK/$base_f.005.bed # The original script
 
   # bedtools intersect -a dataset/positive/NK_B/positive_data_filtered.bed -b /mnt/analysis/derbelh/CpG_Without_Strand.bed -c | awk -F'\t' -v OFS='\t' '$NF >= 3 {NF--; print}' | bedtools intersect -a $f -b - -F 0.05 -wo > results/B_NK/$base_f.005.bed # original script but minimum number of CpG
@@ -105,6 +113,7 @@ mkdir -p results/B_Monocytes/
 for f in dataset/DMRs/B_Monocytes_res/*bed; do
   echo "$f";
 
+  base_f=$(basename "$f" .bed)
  
   bedtools intersect -a "$f" -b dataset/positive/Monocyte_B/positive_data_filtered_edited.bed -F 0.05 -wo > "results/B_Monocytes/$base_f.005.bed"
 

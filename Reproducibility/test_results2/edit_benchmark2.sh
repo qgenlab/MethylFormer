@@ -3,7 +3,8 @@
 DATASETS=("NK_B" "Monocyte_NK" "Monocyte_B")
 CPG_FILE="/mnt/analysis/derbelh/CpG_Without_Strand.bed"
 TARGET_COL=9
-MIN_CPG=5
+MIN_CPG=10
+
 
 for DS in "${DATASETS[@]}"; do
     DIR="dataset/positive/$DS"

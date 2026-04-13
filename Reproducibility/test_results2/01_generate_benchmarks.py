@@ -13,7 +13,7 @@ column_map = {
     'dss': 13,
     'methylkit': 7,
     'methylSig': 7,
-    'dl_dmr_035_generate_DMR_0': 14,
+    'dl_dmr_030_generate_DMR_0': 14,
     'DiffMethylTools_dmr_generate_DMR_0': 14
 }
 
@@ -77,7 +77,7 @@ def plot_upset_plot_and_get_consensus(results_dict, figname):
 b_monocytes_files = [
     f"{current_dir}/results/Monocyte_B/BSseq_new2.dsseq..hg38.DMR.005.bed",
     f"{current_dir}/results/Monocyte_B/DiffMethylTools_dmr_generate_DMR_0.005.bed",
-    f"{current_dir}/results/Monocyte_B/dl_dmr_035_generate_DMR_0.005.bed",
+    f"{current_dir}/results/Monocyte_B/dl_dmr_030_generate_DMR_0.005.bed",
     f"{current_dir}/results/Monocyte_B/DSS_dmr_new2.dss.CpG.hg38DMR.005.bed",
     f"{current_dir}/results/Monocyte_B/methylKit_dmr_new2.methylkit..destranded.CpG.hg38.window.1000.step.500.cov.10.005.bed",
     f"{current_dir}/results/Monocyte_B/methylSig_dmr_new2.methylSig..hg38.window.1000.005.bed"
@@ -86,7 +86,7 @@ b_monocytes_files = [
 b_nk_files = [
     f"{current_dir}/results/NK_B/BSseq_new2.dsseq..hg38.DMR.005.bed",
     f"{current_dir}/results/NK_B/DiffMethylTools_dmr_generate_DMR_0.005.bed",
-    f"{current_dir}/results/NK_B/dl_dmr_035_generate_DMR_0.005.bed",
+    f"{current_dir}/results/NK_B/dl_dmr_030_generate_DMR_0.005.bed",
     f"{current_dir}/results/NK_B/DSS_dmr_new2.dss.CpG.hg38DMR.005.bed",
     f"{current_dir}/results/NK_B/methylKit_dmr_new2.methylkit..destranded.CpG.hg38.window.1000.step.500.cov.10.005.bed",
     f"{current_dir}/results/NK_B/methylSig_dmr_new2.methylSig..hg38.window.1000.005.bed"
@@ -95,7 +95,7 @@ b_nk_files = [
 nk_monocytes_files = [
     f"{current_dir}/results/Monocyte_NK/BSseq_new2.dsseq..hg38.DMR.005.bed",
     f"{current_dir}/results/Monocyte_NK/DiffMethylTools_dmr_generate_DMR_0.005.bed",
-    f"{current_dir}/results/Monocyte_NK/dl_dmr_035_generate_DMR_0.005.bed",
+    f"{current_dir}/results/Monocyte_NK/dl_dmr_030_generate_DMR_0.005.bed",
     f"{current_dir}/results/Monocyte_NK/DSS_dmr_new2.dss.CpG.hg38DMR.005.bed",
     f"{current_dir}/results/Monocyte_NK/methylKit_dmr_new2.methylkit..destranded.CpG.hg38.window.1000.step.500.cov.10.005.bed",
     f"{current_dir}/results/Monocyte_NK/methylSig_dmr_new2.methylSig..hg38.window.1000.005.bed"
