@@ -538,6 +538,53 @@ class DiffMethylTools():
             self.saved_results[(self.generate_DMR.__name__, "unclustered_dms_df")] = res[1]
             self.saved_results[(self.generate_DMR.__name__, "clustered_dms_df")] = res[2]
         return res
+
+    GENERATE_DMR_CPD_REQUIRED_COLUMNS = {
+        "position_data": ["chromosome", "position_start", "hedges_g"]
+    }
+    @analysis_function
+    def generate_DMR_CPD(self, position_data: Optional[InputProcessor] = None, min_pos=3, max_gap = 500, penalty = 0.5, min_avg = 0.4 , rerun=False) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+        """Generate Differentially Methylated Regions (DMRs) using Change point detection (CPD) algorithm.
+
+        .. note::
+            Required columns for ``position_data``:
+                - ``["chromosome", "position_start", "hedges_g"]``
+
+        :param position_data: All position data. Not necessary if the pipeline is in use, defaults to None
+        :type position_data: InputProcessor, optional
+        :param min_pos: Minimum positions, defaults to 3
+        :type min_pos: int, optional
+        :param max_gap: Maximum gap between DMLs, defaults to 500
+        :type max_gap: int, optional
+        :param penalty: penalty value (>0) for CPD algorithm, defaults to 0.5
+        :type penalty: float, optional
+        :param min_avg: minimum average score per DMR, defaults to 0.4
+        :type min_avg: float, optional
+        :param rerun: Rerun the analysis. If False, load previous output. Defaults to False.
+        :type rerun: bool, optional
+        :return: DMR results
+        :rtype: tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]
+        """
+        assert (not self.pipeline and position_data is not None) or (self.pipeline), "If the pipeline isn't in use, data must be provided."
+
+        parameters = locals().copy()
+
+        if position_data is not None:
+            position_data = position_data.copy()
+            position_data.process()
+            position_data = position_data.data_container
+        else:
+            # pipeline is in use here, due to assert and data is None
+            position_data = self.saved_results[self.deep_learning_based.__name__]
+
+        parameters = self.__prepare_parameters(parameters, position_data=position_data)
+        res = self.obj.generate_DMR_CPD(**parameters)
+
+        if self.pipeline:
+            self.saved_results[(self.generate_DMR_CPD.__name__, "cluster_df")] = res[0]
+            self.saved_results[(self.generate_DMR_CPD.__name__, "unclustered_dms_df")] = res[1]
+            self.saved_results[(self.generate_DMR_CPD.__name__, "clustered_dms_df")] = res[2]
+        return res
     
     MAP_POSITIONS_TO_GENES_REQUIRED_COLUMNS = {
         "positions": ["chromosome", "position_start", "diff"]

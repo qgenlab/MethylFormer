@@ -16,6 +16,8 @@ import re
 from scipy.stats import mannwhitneyu, ttest_ind, ranksums, ks_2samp, median_test, brunnermunzel
 
 from lib import InputProcessor
+import ruptures as rpt
+
 
 from .position_p_vals import position_gamma, position_limma
 from .gene_analysis import window_based_gene, position_based_gene
@@ -495,6 +497,75 @@ class Analysis():
         # print(unclustered_dms)
         clustered_dms_df = pd.concat(clustered_dms) if clustered_dms else pd.DataFrame()
         return cluster_df, unclustered_dms_df.reset_index(), clustered_dms_df.reset_index()
+
+    def generate_DMR_CPD(self, position_data, min_pos=3, max_gap=500, penalty=0.5, min_avg=0.4):
+        """Required columns:
+
+        ["chrom", "chromStart", "chromEnd", "hedges_g"]
+
+        """
+        df = position_data.copy()
+        df = df.sort_values(["chrom", "chromStart"]).reset_index(drop=True)
+        df['prev_pos'] = df.groupby("chrom")["chromStart"].shift(1)
+        df['dist'] = df["chromStart"] - df['prev_pos']
+        is_new_chr = df["chrom"] != df["chrom"].shift(1)
+        is_large_gap = df['dist'] > max_gap
+        df['is_break'] = is_new_chr | is_large_gap | df['dist'].isna()
+        df['island_id'] = df['is_break'].cumsum()
+        df['segment_id'] = -1
+        df['segment_avg'] = np.nan
+        global_segment_counter = 0
+        for island, group in df.groupby('island_id'):
+            signal = group["hedges_g"].values
+            indices = group.index
+            if len(signal) < 3:
+                df.loc[indices, 'segment_id'] = global_segment_counter
+                df.loc[indices, 'segment_avg'] = signal.mean()
+                global_segment_counter += 1
+                continue
+            algo = rpt.Pelt(model="l2").fit(signal)
+            change_points = algo.predict(pen=penalty)
+            start_idx = 0
+            for end_idx in change_points:
+                slice_indices = indices[start_idx:end_idx]
+                region_data = signal[start_idx:end_idx]
+                df.loc[slice_indices, 'segment_id'] = global_segment_counter
+                if len(region_data) > 0:
+                    df.loc[slice_indices, 'segment_avg'] = region_data.mean()
+                global_segment_counter += 1
+                start_idx = end_idx
+        df = df.drop(columns=['prev_pos', 'dist', 'is_break', 'island_id'])
+        df_temp = df.copy()
+        df_temp['num_CpGs'] = 1
+        agg_dict = {}
+        for col in df_temp.columns:
+            if col == 'chromStart':
+                agg_dict[col] = 'min'
+            elif col == 'chromEnd':
+                agg_dict[col] = 'max'
+            elif col == 'num_CpGs':
+                agg_dict[col] = 'sum'
+            elif col not in ['chrom', 'segment_id']:
+                agg_dict[col] = 'first'
+        segments = df_temp.groupby(['chrom', 'segment_id'], as_index=False).agg(agg_dict)
+        segments = segments.rename(columns={
+            'chrom': 'chromosome',
+            'chromStart': 'start',
+            'chromEnd': 'end'
+        })
+        core_cols = ['chromosome', 'start', 'end', 'num_CpGs']
+        other_cols = [col for col in segments.columns if col not in core_cols]
+        segments = segments[core_cols + other_cols]
+        segments_dmrs = segments[(segments["segment_avg"].abs() >= min_avg) & (segments["num_CpGs"] >= min_pos)]
+        valid_clusters = segments_dmrs[['chromosome', 'segment_id']].rename(columns={'chromosome': 'chrom'})
+        valid_clusters['is_clustered'] = True
+        df_mapped = df.merge(valid_clusters, on=['chrom', 'segment_id'], how='left')
+        mask_clustered = df_mapped['is_clustered'] == True
+        positions_not_clustered = df_mapped[~mask_clustered].copy()
+        positions_clustered = df_mapped[mask_clustered].copy()
+        positions_not_clustered = positions_not_clustered.drop(columns=['is_clustered'])
+        positions_clustered = positions_clustered.drop(columns=['is_clustered'])
+        return segments_dmrs, positions_not_clustered, positions_clustered
 
     def map_positions_to_genes(self, positions: InputProcessor.data_container, gene_regions: list[str]|str = ["intron", "exon", "upstream", "CCRE"], min_pos_diff=0, bed_file="CpG_gencodev42ccrenb_repeat_epic1v2hm450.bed", gtf_file="CpG_gencodev42ccrenb_repeat_epic1v2hm450.bed"):#"gencode.v41.chr_patch_hapl_scaff.annotation.gtf"):
         """
