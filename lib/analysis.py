@@ -320,7 +320,7 @@ class Analysis():
 
         return data
     
-    def generate_DMR(self, significant_position_data: InputProcessor.data_container, position_data: InputProcessor.data_container, min_pos=3, neural_change_limit=7.5, neurl_perc=30, opposite_perc=10):
+    def rate_DMR(self, significant_position_data: InputProcessor.data_container, position_data: InputProcessor.data_container, min_pos=3, neural_change_limit=7.5, neurl_perc=30, opposite_perc=10):
         """
         
         significant_position_data:
@@ -498,7 +498,7 @@ class Analysis():
         clustered_dms_df = pd.concat(clustered_dms) if clustered_dms else pd.DataFrame()
         return cluster_df, unclustered_dms_df.reset_index(), clustered_dms_df.reset_index()
 
-    def generate_DMR_CPD(self, position_data, min_pos=3, max_gap=500, penalty=0.5, min_avg=0.4):
+    def generate_DMR_CPD(self, position_data, min_pos=3, max_gap=500, penalty=0.1, min_avg=0.35):
         """Required columns:
 
         ["chrom", "chromStart", "chromEnd", "hedges_g"]
