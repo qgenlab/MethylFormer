@@ -543,7 +543,7 @@ class DiffMethylTools():
         "position_data": ["chromosome", "position_start", "hedges_g"]
     }
     @analysis_function
-    def generate_DMR_CPD(self, position_data: Optional[InputProcessor] = None, min_pos=3, max_gap = 500, penalty = 0.5, min_avg = 0.4 , rerun=False) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    def generate_DMR_CPD(self, position_data: Optional[InputProcessor] = None, min_pos=3, max_gap = 500, penalty = 0.1, min_avg = 0.35 , rerun=False) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """Generate Differentially Methylated Regions (DMRs) using Change point detection (CPD) algorithm.
 
         .. note::
@@ -556,9 +556,9 @@ class DiffMethylTools():
         :type min_pos: int, optional
         :param max_gap: Maximum gap between DMLs, defaults to 500
         :type max_gap: int, optional
-        :param penalty: penalty value (>0) for CPD algorithm, defaults to 0.5
+        :param penalty: penalty value (>0) for CPD algorithm, defaults to 0.1
         :type penalty: float, optional
-        :param min_avg: minimum average score per DMR, defaults to 0.4
+        :param min_avg: minimum average score per DMR, defaults to 0.35
         :type min_avg: float, optional
         :param rerun: Rerun the analysis. If False, load previous output. Defaults to False.
         :type rerun: bool, optional
@@ -1343,7 +1343,7 @@ class DiffMethylTools():
      del merged
      # res = self.generate_q_values(InputProcessor(res))
      res_filter = self.filters_dl(InputProcessor(res), min_output=min_output, abs_min_diff=abs_min_diff)
-     DMR = self.generate_DMR(InputProcessor(res_filter), InputProcessor(res))
+     DMR = self.generate_DMR_CPD( InputProcessor(res))
      pos_mapped = self.map_win_2_pos(InputProcessor(DMR[0]) , InputProcessor(res) )
      mapped = self.map_positions_to_genes(InputProcessor(pos_mapped), ref_folder= ref_folder)
      return mapped
