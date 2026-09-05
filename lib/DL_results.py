@@ -7,16 +7,12 @@ from collections import OrderedDict
 class DLresults():
     def __init__(self, data, model_path="../bin/DL_model_state.pth", output_path=".", cuda="0", n_threads = 5):
         self.device = torch.device('cuda:'+cuda if torch.cuda.is_available() else 'cpu')
+        # 1. Initialize the empty model architecture and move it to the device
         self.model = diff_methy().to(self.device)
-        # weights = torch.load(model_path)
-        # self.model.load_state_dict(weights, "cpu")
-        state_dict = torch.load(model_path, map_location='cpu')
-        new_state_dict = OrderedDict()
-        for k, v in state_dict.items():
-            name = k.replace("module.", "")
-            new_state_dict[name] = v
-        self.model.load_state_dict(new_state_dict)
-        # self.model = torch.load(model_path)
+        # 2. Load the newly cleaned dictionary of weights (mapping to the correct device)
+        weights = torch.load(model_path, map_location=self.device)
+        # 3. Inject the weights into the model
+        self.model.load_state_dict(weights)
         self.model.eval()
         self.n_threads = n_threads
         self.output_path = output_path

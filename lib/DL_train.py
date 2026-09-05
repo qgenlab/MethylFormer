@@ -12,7 +12,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from sklearn.metrics import roc_auc_score
 import traceback
 from .DL_model import *
 import random
@@ -89,5 +88,7 @@ class DL_train():
                 loss.backward()
                 optimizer.step()
                 scheduler.step()
-            torch.save(self.model, f"{self.output_path}/model_full_epoch_{epoch}.pth")
+            state_to_save = self.model.module.state_dict()
+            torch.save(state_to_save, f"{self.output_path}/model_full_epoch_{epoch}.pth")
+            # torch.save(self.model, f"{self.output_path}/model_full_epoch_{epoch}.pth")
 

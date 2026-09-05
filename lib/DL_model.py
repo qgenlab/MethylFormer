@@ -12,7 +12,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from sklearn.metrics import roc_auc_score
 import traceback
 
 
@@ -103,6 +102,111 @@ class BedDataset(Dataset):
         if _rand < 0.1:
             rand_diff = np.zeros(cov1.shape)
         return out1_l, cov1, out2_l, cov2, pos, rand_diff# , merged_df_stdv
+
+
+#class BedDataset(Dataset):
+#    def __init__(self, bed_non_sim, bed_sim, bed_rev_non_sim, bed_non_sim2=[], bed_sim2=[], bed_rev_non_sim2=[], seq_len=None):
+#        self.seq_len = seq_len
+#        print("--- Loading Dataset 1 ---")
+#        self.dataset1, self.idx1, self.diff1 = self._load_data(bed_non_sim, bed_sim, bed_rev_non_sim)
+#        print("--- Loading Dataset 2 ---")
+#        self.dataset2, self.idx2, self.diff2 = self._load_data(bed_non_sim2, bed_sim2, bed_rev_non_sim2)
+#    def _load_data(self, bed_non_sim, bed_sim, bed_rev_non_sim):
+#        dataset = {}
+#        idx_dict = {}
+#        for bed_file in bed_non_sim:
+#            print("Reading real data")
+#            df = pd.read_csv(bed_file, delim_whitespace=True, names=["chrom", "chromStart", "chromEnd", "coverage", "blockSizes", "output_y", "regionID", "TAG"])
+#            df["blockSizes"] = df["blockSizes"].clip(lower=0, upper=100)
+#            if 0 not in dataset:
+#                dataset[0] = [df]
+#                idx_dict[0] = set(df["regionID"].unique())
+#            else:
+#                dataset[0].append(df)
+#                idx_dict[0] |= set(df["regionID"].unique())
+#        for f in bed_sim:
+#            print("Reading simulation data")
+#            diff = int(re.search(r'CpG_diff_(-?\d+)_', f).group(1))
+#            df = pd.read_csv(f, delim_whitespace=True, names=["chrom", "chromStart", "chromEnd", "coverage", "blockSizes", "output_y", "regionID", "TAG"])
+#            df["blockSizes"] = df["blockSizes"].clip(lower=0, upper=100)
+#            if diff not in dataset:
+#                dataset[diff] = [df]
+#                idx_dict[diff] = set(df["regionID"].unique())
+#            else:
+#                dataset[diff].append(df)
+#                idx_dict[diff] = idx_dict[diff].intersection(set(df["regionID"].unique()))
+#                # idx_dict[diff] |= set(df["regionID"].unique())
+#        for bed_file in bed_rev_non_sim:
+#            if not bed_file: continue 
+#            print("Reading reverse real data")
+#            df = pd.read_csv(bed_file, delim_whitespace=True, names=["chrom", "chromStart", "chromEnd", "coverage", "blockSizes", "output_y", "regionID", "TAG"])
+#            df["blockSizes"] = df["blockSizes"].clip(lower=0, upper=100)
+#            if -0.01 not in dataset:
+#                dataset[-0.01] = [df]
+#            else:
+#                dataset[-0.01].append(df)
+#        diff_keys = [int(k) for k in dataset if k not in [0, -0.01]]
+#        for key in idx_dict.keys(): 
+#            idx_dict[key] = list(idx_dict[key])
+#        return dataset, idx_dict, diff_keys
+#    def __len__(self):
+#        return len(self.idx1[0]) + len(self.idx2[0])
+#    def __getitem__(self, idx):
+#        if random.random() < 0.5:
+#            active_ds = self.dataset1
+#            active_idx = self.idx1
+#            active_diff = self.diff1
+#        else:
+#            active_ds = self.dataset2
+#            active_idx = self.idx2
+#            active_diff = self.diff2
+#        rand_diff = random.choice(active_diff)
+#        rand_reg = random.sample(active_idx[rand_diff], 1)[0]
+#        out1 = active_ds[0]
+#        out2 = active_ds[rand_diff]
+#        _rand = random.random()
+#        mix = False
+#        if _rand < 0.1:
+#            _r = random.choice([0, -0.01])
+#            out1 = active_ds[_r][:3]
+#            out2 = active_ds[_r][3:]
+#        if random.random() < 0.5:
+#            out1, out2 = out2, out1
+#            mix = True
+#        out1_l = []
+#        out2_l = []
+#        for e in out1:
+#            e = e[e["regionID"] == rand_reg][["chromStart", "coverage", "blockSizes", "TAG", "output_y"]]
+#            if not e.empty: out1_l.append(e)
+#        for e in out2:
+#            e = e[e["regionID"] == rand_reg][["chromStart", "coverage", "blockSizes", "TAG", "output_y"]]
+#            if not e.empty: out2_l.append(e)
+#        if not out1_l or not out2_l:
+#            return self.__getitem__(random.randint(0, len(self) - 1))
+#        out1_l_ = reduce(lambda left, right: pd.merge(left, right, on="chromStart", how="outer", suffixes=('', '_1')), out1_l)
+#        out2_l_ = reduce(lambda left, right: pd.merge(left, right, on="chromStart", how="outer", suffixes=('', '_1')), out2_l)
+#        common_keys = set(out1_l_['chromStart']).intersection(set(out2_l_['chromStart']))
+#        out1_l_ = out1_l_[out1_l_['chromStart'].isin(common_keys)].sort_values(by='chromStart')
+#        out2_l_ = out2_l_[out2_l_['chromStart'].isin(common_keys)].sort_values(by='chromStart')
+#        np1 = out1_l_.filter(like="blockSizes").to_numpy()
+#        np2 = out2_l_.filter(like="blockSizes").to_numpy()
+#        rand_diff = out1_l_.filter(like="output_y").to_numpy() if mix else out2_l_.filter(like="output_y").to_numpy()
+#        rand_diff = -1 * rand_diff if mix else rand_diff
+#        try:
+#            out1_l = histogram_normalized(np1, n_bins=50)
+#            out2_l = histogram_normalized(np2, n_bins=50)
+#        except ValueError:
+#            return self.__getitem__(random.randint(0, len(self) - 1))
+#        pos = out1_l_["chromStart"].to_numpy() - out1_l_["chromStart"].to_numpy()[0] + 1
+#        cov1 = out1_l_.filter(like="coverage").to_numpy()
+#        cov2 = out2_l_.filter(like="coverage").to_numpy()
+#        if pos.min() < 0: 
+#            print("Alpha triggered") 
+#        if _rand < 0.1:
+#            rand_diff = np.zeros(cov1.shape)
+#        return out1_l, cov1, out2_l, cov2, pos, rand_diff
+#
+
 
 
 
@@ -230,6 +334,9 @@ class TransformerEncoderLayerWithRelativeBias(nn.Module):
 
 
 
+
+
+        
 class KNNSmoothing(nn.Module):
     def __init__(
         self,
@@ -285,7 +392,72 @@ class KNNSmoothing(nn.Module):
             smoothed[b, valid_idx] = smooth_valid
             smoothed[b, ~mask] = 0.0
         return smoothed
+#
 
+
+
+#class KNNSmoothing(nn.Module):
+#    def __init__(
+#        self,
+#        embed_dim=128, # NEW: Added embed_dim for the MLP gate
+#        k=64,
+#        sigma=1.0,     # after density normalization
+#        tau=0.3        # isolation threshold
+#    ):
+#        super().__init__()
+#        self.k = k
+#        self.tau = tau
+#        self.register_buffer("sigma", torch.tensor(float(sigma)))
+#        self.alpha_gate = nn.Sequential(
+#            nn.Linear(embed_dim, 64),
+#            nn.ReLU(),
+#            nn.Linear(64, 1),
+#            nn.Sigmoid() 
+#        )
+#    def forward(self, output, positions):
+#        B, L, D = output.shape
+#        smoothed = torch.zeros_like(output)
+#        alpha = self.alpha_gate(output)
+#        for b in range(B):
+#            pos = positions[b].float()
+#            out = output[b]
+#            mask = pos != 0
+#            valid_idx = torch.where(mask)[0]
+#            n_valid = valid_idx.numel()
+#            if n_valid <= 1:
+#                smoothed[b] = out
+#                continue
+#            k_eff = min(self.k, n_valid - 1)
+#            valid_pos = pos[valid_idx]
+#            dist = torch.abs(valid_pos[:, None] - valid_pos[None, :])
+#            knn_dist, knn_local_idx = torch.topk(
+#                dist, k=k_eff + 1, dim=-1, largest=False
+#            )
+#            knn_dist = knn_dist[:, 1:]
+#            knn_local_idx = knn_local_idx[:, 1:]
+#            knn_idx = valid_idx[knn_local_idx]
+#            neighbors = out[knn_idx]                     # [n_valid, k, D]
+#            local_scale = torch.median(knn_dist, dim=-1, keepdim=True).values
+#            knn_dist = knn_dist / (local_scale + 1e-6)
+#            weights = torch.exp(-(knn_dist ** 2) / (2 * self.sigma ** 2))
+#            weights = weights / (weights.sum(dim=-1, keepdim=True) + 1e-8)
+#            center_scalar = out[valid_idx].mean(dim=-1)         # [n_valid]
+#            neighbor_scalar = neighbors.mean(dim=-1)            # [n_valid, k]
+#            same_sign = (
+#                torch.sign(neighbor_scalar)
+#                == torch.sign(center_scalar).unsqueeze(1)
+#            ).float()
+#            support = torch.sum(weights * same_sign, dim=-1)    # [n_valid]
+#            gamma = torch.clamp(support / self.tau, max=1.0)
+#            smooth_valid = torch.sum(
+#                weights.unsqueeze(-1) * neighbors, dim=1
+#            )
+#            smooth_valid = gamma.unsqueeze(-1) * smooth_valid
+#            valid_alpha = alpha[b, valid_idx]
+#            smooth_valid = valid_alpha * smooth_valid + (1 - valid_alpha) * out[valid_idx]
+#            smoothed[b, valid_idx] = smooth_valid
+#            smoothed[b, ~mask] = 0.0
+#        return smoothed
 
 
 
@@ -302,7 +474,7 @@ class diff_methy(nn.Module):
         self.output2 = nn.Linear(embed_dim, 1)
         self.norm = nn.LayerNorm(embed_dim)
         self.gelu = nn.GELU()
-        self.smoothing_layer = KNNSmoothing()
+        self.smoothing_layer = KNNSmoothing(embed_dim)
     def forward(self, case, ctr, pos):
         case = self.norm(self.dim_data(case))
         ctr  = self.norm(self.dim_data(ctr))

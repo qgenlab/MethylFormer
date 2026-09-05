@@ -13,10 +13,14 @@ from .input_processor import InputProcessor
 from .analysis import Analysis
 from collections import defaultdict, Counter
 import random
+from pathlib import Path
+
 
 class Plots():
-    def __init__(self, save_path = "."):
-        self.save_path = save_path+"/plots/"
+    def __init__(self, save_path = "./plots/"):
+        folder_path = Path(save_path)
+        folder_path.mkdir(parents=True, exist_ok=True)
+        self.save_path = save_path
 
     def assert_required_columns(self, df, required_columns):
         Analysis().assert_required_columns(df, required_columns)
@@ -1007,11 +1011,11 @@ class Plots():
                     total_counts_4[_c] += this_counts_4[_c]
                 for _c in this_counts_4:
                     total_counts_p4[_c] += this_counts_4[_c]
-        self.__annotation_chart(total_counts_1, "Fraction of Occurrences: Gene Intron, Gene Exon, IG, and ENCODE Types", self.save_path+add_to_name + "_" + name+'_inex2.png')
-        self.__annotation_chart(total_counts_2, "Fraction of Occurrences: Gene Body, IG, and ENCODE Types", self.save_path+add_to_name + "_" + name+'_body2.png')
-        self.__annotation_chart(total_counts_3, "", self.save_path+add_to_name + "_" + name+'_repeat2.png')
-        self.__annotation_chart(total_counts_4, "", self.save_path+add_to_name + "_" + name+'_epic2.png')
-        self.__annotation_chart(total_counts_p4, "", self.save_path+add_to_name + "_" + name+'_epicP2.png')
+        self.__annotation_chart(total_counts_1, "Fraction of Occurrences: Gene Intron, Gene Exon, IG, and ENCODE Types", add_to_name + "_" + name+'_inex2.png')
+        self.__annotation_chart(total_counts_2, "Fraction of Occurrences: Gene Body, IG, and ENCODE Types", add_to_name + "_" + name+'_body2.png')
+        self.__annotation_chart(total_counts_3, "", add_to_name + "_" + name+'_repeat2.png')
+        self.__annotation_chart(total_counts_4, "", add_to_name + "_" + name+'_epic2.png')
+        self.__annotation_chart(total_counts_p4, "", add_to_name + "_" + name+'_epicP2.png')
         return [pd.DataFrame.from_dict(list(dict(total_counts_1).items())), pd.DataFrame.from_dict(list(dict(total_counts_2).items())), pd.DataFrame.from_dict(list(dict(total_counts_3).items())), pd.DataFrame.from_dict(list(dict(total_counts_4).items())), pd.DataFrame.from_dict(list(dict(total_counts_p4).items())), pd.DataFrame.from_dict(list(dict(total_gene).items()))]
     
     def match_position_annotation(self, regions_df: InputProcessor.data_container, bed_file: InputProcessor.data_container, name:str="match_position_annotation", show_counts = False):
@@ -1093,6 +1097,8 @@ class Plots():
            total_counts_4[ _c ] = 1 + total_counts_4[ _c ]
         for _c in this_counts_4:
            total_counts_p4[ _c ] = this_counts_4[ _c ] + total_counts_p4[ _c ]
+        print(f"name = {name}")
+        print(f"self.save_path = {self.save_path}")
         self.__annotation_chart(total_counts_1, "Fraction of Occurrences: Gene Intron, Gene Exon, IG, and ENCODE Types", self.save_path+name+'_inex2.png', nb = show_counts)
         self.__annotation_chart(total_counts_2, "Fraction of Occurrences: Gene Body, IG, and ENCODE Types", self.save_path+name+'_body2.png', nb = show_counts)
         self.__annotation_chart(total_counts_3, "", self.save_path+name+'_repeat2.png', nb = show_counts)
