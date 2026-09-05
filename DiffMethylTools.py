@@ -543,7 +543,7 @@ class DiffMethylTools():
         "position_data": ["chromosome", "position_start", "hedges_g"]
     }
     @analysis_function
-    def generate_DMR_CPD(self, position_data: Optional[InputProcessor] = None, min_pos=3, max_gap = 500, penalty = 0.1, min_avg = 0.35 , rerun=False) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    def generate_DMR_CPD(self, position_data: Optional[InputProcessor] = None, min_pos=3, max_gap = 500, penalty = 0.1, min_avg = 1.0 , rerun=False) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """Generate Differentially Methylated Regions (DMRs) using Change point detection (CPD) algorithm.
 
         .. note::
@@ -558,7 +558,7 @@ class DiffMethylTools():
         :type max_gap: int, optional
         :param penalty: penalty value (>0) for CPD algorithm, defaults to 0.1
         :type penalty: float, optional
-        :param min_avg: minimum average score per DMR, defaults to 0.35
+        :param min_avg: minimum average score per DMR, defaults to 1.0
         :type min_avg: float, optional
         :param rerun: Rerun the analysis. If False, load previous output. Defaults to False.
         :type rerun: bool, optional

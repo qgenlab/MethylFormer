@@ -17,7 +17,7 @@ from scipy.stats import mannwhitneyu, ttest_ind, ranksums, ks_2samp, median_test
 
 from lib import InputProcessor
 import ruptures as rpt
-
+import os
 
 from .position_p_vals import position_gamma, position_limma
 from .gene_analysis import window_based_gene, position_based_gene
@@ -76,6 +76,8 @@ class Analysis():
         d["case"] = [pl.from_pandas(x).with_columns(pl.col("chrom").cast(pl.Utf8)) for x in case_data] 
 
         min_cov_group = int(min_cov_group)
+        min_cov_individual = int(min_cov_individual)
+
 
         # print(d)
         for key in ["ctr", "case"]:
@@ -164,9 +166,14 @@ class Analysis():
         case_mean = case.with_columns(mean_blockSizes=case.select(cs.contains("blockSizes_")).mean_horizontal())['mean_blockSizes']
         ctr_mean = ctr.with_columns(mean_blockSizes=ctr.select(cs.contains("blockSizes_")).mean_horizontal())['mean_blockSizes']
         group_filter = case_cov_cond & ctr_cov_cond
+
+
         if min_samp_case + min_samp_ctr < nbr_case + nbr_ctr:
             group_filter = group_filter | ( ( ( case1 >= min_cov_group ) & ( ctr1 < min_cov_group) & ( ctr_mean < small_mean ) ) |  ( ( ctr1 >= min_cov_group ) & ( case1 < min_cov_group ) & ( case_mean < small_mean ) ) )
             # group_filter = group_filter | ( ( ( case1 >= min_samp_case ) & ( ctr1 < min_samp_ctr) & ( ctr_mean < small_mean ) ) |  ( ( ctr1 >= min_samp_ctr    ) & ( case1 < min_samp_case ) & ( case_mean < small_mean ) ) )
+
+        if min_samp_case + min_samp_ctr < nbr_case + nbr_ctr:
+            group_filter = group_filter | ( ( ( case1 >= min_cov_group ) & ( ctr1 < min_cov_group) & ( ctr_mean < small_mean ) ) |  ( ( ctr1 >= min_cov_group ) & ( case1 < min_cov_group ) & ( case_mean < small_mean ) ) )
         case = case.filter(group_filter)
         ctr = ctr.filter(group_filter)
         case = case.to_pandas()
@@ -178,7 +185,44 @@ class Analysis():
         f = pd.merge(case,ctr,on=MERGE_LIST, how='inner')
         f["diff"] = f["avg_case"] - f["avg_ctr"]
         self._merged_result = f.sort_values(by=MERGE_LIST).reset_index(drop=True)
-        print("final output of filter", self._merged_result)
+
+        print(f'nbr_case = {nbr_case}')
+        print(f'nbr_ctr = {nbr_ctr}')
+
+        print(f'min_samp_case = {min_samp_case}')
+        print(f'min_samp_ctr = {min_samp_ctr}')
+
+        coverage_case = self._merged_result.filter(like="coverage_case")
+        coverage_ctr = self._merged_result.filter(like="coverage_ctr")
+
+
+        case_missing = self._merged_result.filter(like="coverage_case").isna().sum(axis=1)
+        ctr_missing = self._merged_result.filter(like="coverage_ctr").isna().sum(axis=1)
+
+        case_present = coverage_case.notna().sum(axis=1)
+        ctr_present = coverage_ctr.notna().sum(axis=1)
+
+        # print(f'case_missing = {case_missing}')
+        # print(f'ctr_missing = {ctr_missing}')
+
+        # self._merged_result = self._merged_result[
+        #     (case_present  > (nbr_case - min_samp_case)) &
+        #     (ctr_present > (nbr_ctr - min_samp_ctr))
+        # ].reset_index(drop=True)
+
+        # print("final output of filter", self._merged_result)
+
+        coverage_case = self._merged_result.filter(like="coverage_case")
+        coverage_ctr = self._merged_result.filter(like="coverage_ctr")
+
+        case_present = (coverage_case >= min_cov_individual).sum(axis=1)
+        ctr_present = (coverage_ctr >= min_cov_individual).sum(axis=1)
+
+        self._merged_result = self._merged_result[
+        (case_present >= min_samp_case) &
+        (ctr_present >= min_samp_ctr)
+        ].reset_index(drop=True)
+
         return self._merged_result
     def position_based(self, data: InputProcessor.data_container, method="limma", features=None, test_factor="Group", processes=22, model="eBayes", min_std=0.1, fill_na:bool=True):
         """
@@ -320,7 +364,7 @@ class Analysis():
 
         return data
     
-    def rate_DMR(self, significant_position_data: InputProcessor.data_container, position_data: InputProcessor.data_container, min_pos=3, neural_change_limit=7.5, neurl_perc=30, opposite_perc=10):
+    def generate_DMR(self, significant_position_data: InputProcessor.data_container, position_data: InputProcessor.data_container, min_pos=3, neural_change_limit=7.5, neurl_perc=30, opposite_perc=10):
         """
         
         significant_position_data:
@@ -498,32 +542,247 @@ class Analysis():
         clustered_dms_df = pd.concat(clustered_dms) if clustered_dms else pd.DataFrame()
         return cluster_df, unclustered_dms_df.reset_index(), clustered_dms_df.reset_index()
 
-    def generate_DMR_CPD(self, position_data, min_pos=3, max_gap=500, penalty=0.1, min_avg=0.35):
-        """Required columns:
+######### Original function
+#    def generate_DMR_CPD(self, position_data, min_pos=3, max_gap=500, merge_gap=10, penalty=0.1, min_avg=1.0, min_diff=0.1, model="l1"):
+#        df = position_data.copy()
+#        df = df.sort_values(["chrom", "chromStart"]).reset_index(drop=True)
+#        df["prev_pos"] = df.groupby("chrom")["chromStart"].shift(1)
+#        df["dist"] = df["chromStart"] - df["prev_pos"]
+#        is_new_chr = df["chrom"] != df["chrom"].shift(1)
+#        is_large_gap = df["dist"] > max_gap
+#        df["is_break"] = is_new_chr | is_large_gap | df["dist"].isna()
+#        df["island_id"] = df["is_break"].cumsum()
+#        df["segment_id"] = -1
+#        df["segment_avg"] = np.nan
+#        global_segment_counter = 0
+#        for island, group in df.groupby("island_id"):
+#            signal = group["hedges_g"].values
+#            indices = group.index
+#            n_cpgs = len(signal)
+#            if n_cpgs < min_pos:
+#                df.loc[indices, "segment_id"] = global_segment_counter
+#                df.loc[indices, "segment_avg"] = signal.sum() / math.sqrt(n_cpgs)
+#                global_segment_counter += 1
+#                continue
+#            algo = rpt.BottomUp(model=model).fit(signal)
+#            change_points = algo.predict(pen=penalty)
+#            start_idx = 0
+#            for end_idx in change_points:
+#                slice_indices = indices[start_idx:end_idx]
+#                region_data = signal[start_idx:end_idx]
+#
+#                df.loc[slice_indices, "segment_id"] = global_segment_counter
+#                if len(region_data) > 0:
+#                    df.loc[slice_indices, "segment_avg"] = region_data.sum() / math.sqrt(
+#                        len(region_data)
+#                    )
+#                global_segment_counter += 1
+#                start_idx = end_idx
+#        df = df.drop(columns=["prev_pos", "dist", "is_break", "island_id"])
+#        df_temp = df.copy()
+#        df_temp["num_CpGs"] = 1
+#        agg_dict = {}
+#        for col in df_temp.columns:
+#            if col == "chromStart":
+#                agg_dict[col] = "min"
+#            elif col == "chromEnd":
+#                agg_dict[col] = "max"
+#            elif col == "num_CpGs":
+#                agg_dict[col] = "sum"
+#            elif col in ["chrom", "segment_id"]:
+#                continue
+#            elif pd.api.types.is_numeric_dtype(df_temp[col]):
+#                agg_dict[col] = "mean"
+#            else:
+#                agg_dict[col] = "first"
+#        segments = df_temp.groupby(["chrom", "segment_id"], as_index=False).agg(
+#            agg_dict
+#        )
+#        segments = segments.rename(
+#            columns={
+#                "chrom": "chromosome",
+#                "chromStart": "start",
+#                "chromEnd": "end",
+#            }
+#        )
+#        segments_filtered = segments[
+#            segments["segment_avg"].abs() >= min_avg
+#        ].copy()
+#        if "diff" in segments_filtered.columns and min_diff is not None:
+#            segments_filtered = segments_filtered[
+#                segments_filtered["diff"].abs() > min_diff
+#            ]
+#        if segments_filtered.empty:
+#            empty_dmrs = pd.DataFrame(
+#                columns=["chromosome", "start", "end", "num_CpGs"]
+#            )
+#            return empty_dmrs, df.copy(), df.iloc[0:0].copy()
+#        segments_filtered = segments_filtered.sort_values(
+#            ["chromosome", "start"]
+#        ).reset_index(drop=True)
+#        segments_filtered["prev_end"] = segments_filtered.groupby("chromosome")[
+#            "end"
+#        ].shift(1)
+#        segments_filtered["is_break"] = (
+#            (
+#                segments_filtered["chromosome"]
+#                != segments_filtered["chromosome"].shift(1)
+#            )
+#            | (
+#                segments_filtered["start"] - segments_filtered["prev_end"]
+#                >= merge_gap
+#            )
+#            | segments_filtered["prev_end"].isna()
+#        )
+#        segments_filtered["merge_group"] = segments_filtered["is_break"].cumsum()
+#        merge_agg = {}
+#        for col in segments_filtered.columns:
+#            if col in [
+#                "chromosome",
+#                "merge_group",
+#                "prev_end",
+#                "is_break",
+#                "segment_id",
+#            ]:
+#                continue
+#            elif col == "start":
+#                merge_agg[col] = "min"
+#            elif col == "end":
+#                merge_agg[col] = "max"
+#            elif col == "num_CpGs":
+#                merge_agg[col] = "sum"
+#            elif pd.api.types.is_numeric_dtype(segments_filtered[col]):
+#                merge_agg[col] = "mean"
+#            else:
+#                merge_agg[col] = "first"
+#        merged_segments = segments_filtered.groupby(
+#            ["chromosome", "merge_group"], as_index=False
+#        ).agg(merge_agg)
+#        segments_dmrs = merged_segments[
+#            merged_segments["num_CpGs"] >= min_pos
+#        ].copy()
+#        segments_dmrs = segments_dmrs.drop(
+#            columns=["merge_group"], errors="ignore"
+#        )
+#        core_cols = ["chromosome", "start", "end", "num_CpGs"]
+#        other_cols = [col for col in segments_dmrs.columns if col not in core_cols]
+#        segments_dmrs = segments_dmrs[core_cols + other_cols]
+#        surviving_groups = set(
+#            merged_segments.loc[
+#                merged_segments["num_CpGs"] >= min_pos, "merge_group"
+#            ]
+#        )
+#        valid_segment_ids = set(
+#            segments_filtered.loc[
+#                segments_filtered["merge_group"].isin(surviving_groups),
+#                "segment_id",
+#            ]
+#        )
+#        df["is_clustered"] = df["segment_id"].isin(valid_segment_ids)
+#        positions_not_clustered = (
+#            df[~df["is_clustered"]].drop(columns=["is_clustered"]).copy()
+#        )
+#        positions_clustered = (
+#            df[df["is_clustered"]].drop(columns=["is_clustered"]).copy()
+#        )
+#        return segments_dmrs, positions_not_clustered, positions_clustered
 
-        ["chrom", "chromStart", "chromEnd", "hedges_g"]
+#    def generate_DMR_CPD(self, position_data, min_pos=3, max_gap=500, penalty=0.1, min_avg=1.0, model = "l1"):
+#        """Required columns:
+#
+#        ["chrom", "chromStart", "chromEnd", "hedges_g"]
+#
+#        """
+#        df = position_data.copy()
+#        df = df.sort_values(["chrom", "chromStart"]).reset_index(drop=True)
+#        df['prev_pos'] = df.groupby("chrom")["chromStart"].shift(1)
+#        df['dist'] = df["chromStart"] - df['prev_pos']
+#        is_new_chr = df["chrom"] != df["chrom"].shift(1)
+#        is_large_gap = df['dist'] > max_gap
+#        df['is_break'] = is_new_chr | is_large_gap | df['dist'].isna()
+#        df['island_id'] = df['is_break'].cumsum()
+#        df['segment_id'] = -1
+#        df['segment_avg'] = np.nan
+#        global_segment_counter = 0
+#        for island, group in df.groupby('island_id'):
+#            signal = group["hedges_g"].values
+#            indices = group.index
+#            if len(signal) < 3:
+#                df.loc[indices, 'segment_id'] = global_segment_counter
+#                df.loc[indices, 'segment_avg'] = signal.mean()
+#                global_segment_counter += 1
+#                continue
+#            algo = rpt.BottomUp(model=model).fit(signal)
+#            change_points = algo.predict(pen=penalty)
+#            start_idx = 0
+#            for end_idx in change_points:
+#                slice_indices = indices[start_idx:end_idx]
+#                region_data = signal[start_idx:end_idx]
+#                df.loc[slice_indices, 'segment_id'] = global_segment_counter
+#                if len(region_data) > 0:
+#                    df.loc[slice_indices, 'segment_avg'] = region_data.sum() / math.sqrt(len(region_data))
+#                global_segment_counter += 1
+#                start_idx = end_idx
+#        df = df.drop(columns=['prev_pos', 'dist', 'is_break', 'island_id'])
+#        df_temp = df.copy()
+#        df_temp['num_CpGs'] = 1
+#        agg_dict = {}
+#        for col in df_temp.columns:
+#            if col == 'chromStart':
+#                agg_dict[col] = 'min'
+#            elif col == 'chromEnd':
+#                agg_dict[col] = 'max'
+#            elif col == 'num_CpGs':
+#                agg_dict[col] = 'sum'
+#            elif col not in ['chrom', 'segment_id']:
+#                agg_dict[col] = 'first'
+#        segments = df_temp.groupby(['chrom', 'segment_id'], as_index=False).agg(agg_dict)
+#        segments = segments.rename(columns={
+#            'chrom': 'chromosome',
+#            'chromStart': 'start',
+#            'chromEnd': 'end'
+#        })
+#        core_cols = ['chromosome', 'start', 'end', 'num_CpGs']
+#        other_cols = [col for col in segments.columns if col not in core_cols]
+#        segments = segments[core_cols + other_cols]
+#        segments_dmrs = segments[(segments["segment_avg"].abs() >= min_avg) & (segments["num_CpGs"] >= min_pos)]
+#        valid_clusters = segments_dmrs[['chromosome', 'segment_id']].rename(columns={'chromosome': 'chrom'})
+#        valid_clusters['is_clustered'] = True
+#        df_mapped = df.merge(valid_clusters, on=['chrom', 'segment_id'], how='left')
+#        mask_clustered = df_mapped['is_clustered'] == True
+#        positions_not_clustered = df_mapped[~mask_clustered].copy()
+#        positions_clustered = df_mapped[mask_clustered].copy()
+#        positions_not_clustered = positions_not_clustered.drop(columns=['is_clustered'])
+#        positions_clustered = positions_clustered.drop(columns=['is_clustered'])
+#        return segments_dmrs, positions_not_clustered, positions_clustered
 
-        """
-        df = position_data.copy()
-        df = df.sort_values(["chrom", "chromStart"]).reset_index(drop=True)
-        df['prev_pos'] = df.groupby("chrom")["chromStart"].shift(1)
-        df['dist'] = df["chromStart"] - df['prev_pos']
-        is_new_chr = df["chrom"] != df["chrom"].shift(1)
+#### Updated function
+
+    def _segment_genomic_signal(self, df, chr_col="chrom", pos_col="chromStart", sig_col="hedges_g", max_gap=500, penalty=0.1, model="l1"):
+        """Segments genomic signal along chromosomes using ruptures bottom-up change point detection."""
+        df = df.sort_values([chr_col, pos_col]).reset_index(drop=True)
+        df['prev_pos'] = df.groupby(chr_col)[pos_col].shift(1)
+        df['dist'] = df[pos_col] - df['prev_pos']
+        is_new_chr = df[chr_col] != df[chr_col].shift(1)
         is_large_gap = df['dist'] > max_gap
         df['is_break'] = is_new_chr | is_large_gap | df['dist'].isna()
         df['island_id'] = df['is_break'].cumsum()
         df['segment_id'] = -1
         df['segment_avg'] = np.nan
         global_segment_counter = 0
+        ################################################
+        df["hedges_g__original"] = df["hedges_g"]
+        df["hedges_g"] = df["hedges_g"]*(max(0.7, df['hedges_g'].abs().quantile(0.99)) / max(0.3, df['hedges_g'].abs().quantile(0.99)))
+        ################################################
         for island, group in df.groupby('island_id'):
-            signal = group["hedges_g"].values
+            signal = group[sig_col].values
             indices = group.index
             if len(signal) < 3:
                 df.loc[indices, 'segment_id'] = global_segment_counter
                 df.loc[indices, 'segment_avg'] = signal.mean()
                 global_segment_counter += 1
                 continue
-            algo = rpt.Pelt(model="l2").fit(signal)
+            algo = rpt.BottomUp(model=model).fit(signal)
             change_points = algo.predict(pen=penalty)
             start_idx = 0
             for end_idx in change_points:
@@ -535,37 +794,93 @@ class Analysis():
                 global_segment_counter += 1
                 start_idx = end_idx
         df = df.drop(columns=['prev_pos', 'dist', 'is_break', 'island_id'])
-        df_temp = df.copy()
-        df_temp['num_CpGs'] = 1
-        agg_dict = {}
-        for col in df_temp.columns:
-            if col == 'chromStart':
-                agg_dict[col] = 'min'
-            elif col == 'chromEnd':
-                agg_dict[col] = 'max'
+        return df
+
+
+    def generate_DMR_CPD(self, position_data, min_pos=3, max_gap=500, merge_gap=10, penalty=0.1, min_avg=1.0, min_diff=0.1, model="l1"):
+        df = position_data
+        metric = 'scaled_sum'
+        min_avg = float(min_avg)
+        # output_filename = f"Gastric_cancer_{model}_pen_0_1_scaled_sum_1_full.csv"
+        # os.makedirs(output_dir, exist_ok=True)
+        # output_path = os.path.join(output_dir, output_filename)
+        agg_rules = {col: 'first' for col in df.columns if col not in ['chrom', 'chromStart', 'chromEnd']}
+        for col in df.select_dtypes(include=[np.number]).columns:
+            if col not in ['chrom', 'chromStart', 'chromEnd']:
+                agg_rules[col] = 'mean'
+        df = df.groupby(['chrom', 'chromStart', 'chromEnd'], as_index=False).agg(agg_rules)
+        segmented_df = self._segment_genomic_signal(
+            df, max_gap=max_gap, penalty=penalty, model=model, sig_col="hedges_g"
+        )
+        if segmented_df.empty:
+            print("[WARNING] No segments generated.", flush=True)
+            # pd.DataFrame().to_csv(output_path, index=False)
+            return pd.DataFrame()
+        segmented_df["num_CpGs"] = 1
+        seg_agg_rules = {
+            "chromStart": "min",
+            "chromEnd": "max",
+            "strand": "first",
+            "segment_avg": "first",
+            "num_CpGs": "sum",
+        }
+        for col in segmented_df.columns:
+            if col not in seg_agg_rules and col not in ["chrom", "segment_id", "hedges_g"]:
+                if pd.api.types.is_numeric_dtype(segmented_df[col]):
+                    seg_agg_rules[col] = "mean"
+                else:
+                    seg_agg_rules[col] = "first"
+        collapsed = segmented_df.groupby(["chrom", "segment_id"], as_index=False).agg(seg_agg_rules)
+        dl_metrics = (
+            segmented_df.groupby(["chrom", "segment_id"])["hedges_g"]
+            .agg(
+                model_mean="mean",
+                model_median="median",
+                model_max="max",
+                model_top3_avg=lambda x: x.nlargest(3).mean(),
+                model_sum="sum",
+            )
+            .reset_index()
+        )
+        all_segments = pd.merge(collapsed, dl_metrics, on=["chrom", "segment_id"], how="left")
+        all_segments = all_segments.rename(columns={"chrom": "chromosome", "chromStart": "start", "chromEnd": "end"})
+        all_segments['scaled_sum'] = all_segments['model_sum'] / np.sqrt(all_segments['num_CpGs'])
+        if 'diff' in all_segments.columns:
+            all_segments = all_segments[all_segments['diff'].abs() > min_diff]
+        filtered_df = all_segments[all_segments[metric].abs() >= min_avg].copy()
+        if filtered_df.empty:
+            print("[WARNING] Filter returned 0 segments.", flush=True)
+            # pd.DataFrame().to_csv(output_path, index=False)
+            return pd.DataFrame()
+        filtered_df = filtered_df.sort_values(['chromosome', 'start']).reset_index(drop=True)
+        filtered_df['prev_end'] = filtered_df.groupby('chromosome')['end'].shift(1)
+        filtered_df['is_break'] = (
+            (filtered_df['chromosome'] != filtered_df['chromosome'].shift(1)) |
+            (filtered_df['start'] - filtered_df['prev_end'] >= merge_gap) |
+            filtered_df['prev_end'].isna()
+        )
+        filtered_df['merge_group'] = filtered_df['is_break'].cumsum()
+        merge_agg = {}
+        for col in filtered_df.columns:
+            if col in ['chromosome', 'merge_group', 'prev_end', 'is_break', 'segment_id']:
+                continue
+            elif col == 'start':
+                merge_agg[col] = 'min'
+            elif col == 'end':
+                merge_agg[col] = 'max'
             elif col == 'num_CpGs':
-                agg_dict[col] = 'sum'
-            elif col not in ['chrom', 'segment_id']:
-                agg_dict[col] = 'first'
-        segments = df_temp.groupby(['chrom', 'segment_id'], as_index=False).agg(agg_dict)
-        segments = segments.rename(columns={
-            'chrom': 'chromosome',
-            'chromStart': 'start',
-            'chromEnd': 'end'
-        })
-        core_cols = ['chromosome', 'start', 'end', 'num_CpGs']
-        other_cols = [col for col in segments.columns if col not in core_cols]
-        segments = segments[core_cols + other_cols]
-        segments_dmrs = segments[(segments["segment_avg"].abs() >= min_avg) & (segments["num_CpGs"] >= min_pos)]
-        valid_clusters = segments_dmrs[['chromosome', 'segment_id']].rename(columns={'chromosome': 'chrom'})
-        valid_clusters['is_clustered'] = True
-        df_mapped = df.merge(valid_clusters, on=['chrom', 'segment_id'], how='left')
-        mask_clustered = df_mapped['is_clustered'] == True
-        positions_not_clustered = df_mapped[~mask_clustered].copy()
-        positions_clustered = df_mapped[mask_clustered].copy()
-        positions_not_clustered = positions_not_clustered.drop(columns=['is_clustered'])
-        positions_clustered = positions_clustered.drop(columns=['is_clustered'])
-        return segments_dmrs, positions_not_clustered, positions_clustered
+                merge_agg[col] = 'sum'
+            elif pd.api.types.is_numeric_dtype(filtered_df[col]):
+                merge_agg[col] = 'mean'
+            else:
+                merge_agg[col] = 'first'
+        merged_segments = filtered_df.groupby(['chromosome', 'merge_group'], as_index=False).agg(merge_agg)
+        final_segments = merged_segments[merged_segments["num_CpGs"] >= min_pos]
+        # final_segments.to_csv(output_path, index=False)
+        # print(f"[SUCCESS] Saved single file to: {output_path}", flush=True)
+        return final_segments
+
+
 
     def map_positions_to_genes(self, positions: InputProcessor.data_container, gene_regions: list[str]|str = ["intron", "exon", "upstream", "CCRE"], min_pos_diff=0, bed_file="CpG_gencodev42ccrenb_repeat_epic1v2hm450.bed", gtf_file="CpG_gencodev42ccrenb_repeat_epic1v2hm450.bed"):#"gencode.v41.chr_patch_hapl_scaff.annotation.gtf"):
         """
