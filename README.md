@@ -1,10 +1,8 @@
 # MethylFormer
 # MethylFormer
-MethylFormer is a Python-based toolkit for the comprehensive analysis of DNA methylation differences between two groups of samples. Designed for both short-read (e.g., WGBS, RRBS) and long-read (e.g., Nanopore) methylome data, DiffMethylTools enables accurate and streamlined detection of differentially methylated loci (DMLs) and regions (DMRs). The tool accepts flexible input formats including Bismark reports and generic BED-style methylation calls, making it compatible with most upstream methylation profiling workflows.
+MethylFormer is the first deep learning-based framework that reformulates differential methylation detection as a representation-learning problem. Rather than testing methylation under predefined statistical assumptions, MethylFormer uses Siamese Transformer encoders to learn cross-group differences in differential methylation. We trained MethylFormer on augmented real methylomes in which differential methylation was introduced with known labels, and then evaluated MethylFormer against five existing methods on four benchmarking strategies across seven independent, real-world datasets and four simulated dataset pairs. Even without training or fine-tuning on real differential methylation patterns, MethylFormer consistently outperformed existing approaches across these evaluations. 
 
-The package integrates statistical testing, biological annotation, and high-quality visualization into a single-command pipeline. Users can merge and filter candidate regions, map methylation changes to gene features and cis-regulatory elements (CCREs), and generate summary plots such as volcano plots, Manhattan plots, heatmaps, and gene-region profiles. DiffMethylTools also includes a module for generating annotation pie charts that quantify overlap of DMRs with genomic and functional features.
-
-By combining flexibility with usability, DiffMethylTools provides researchers with a practical and efficient platform for epigenomic analysis. It supports high-throughput and reproducible workflows and is especially well-suited for studies investigating the role of DNA methylation in development, differentiation, and disease progression.
+MethylFormer is also integrated with our DiffMethylTools which is a Python-based toolkit for the comprehensive analysis of DNA methylation differences between two groups of samples. Thus, MethylFormer contains all features designed in DiffMethylTools, including flexible input formats (such as  Bismark reports and generic BED-style methylation calls, making it compatible with most upstream methylation profiling workflows), biological annotation, and high-quality visualization into a single-command pipeline. 
 
 *This tutorial is still a work in progress.*
 
@@ -213,9 +211,8 @@ python ../DiffMethylTools.py match_region_annotation \
   --ref_folder (hg19 or hg38)
 ```
 
-## Citing DiffMethylTools
-If you used DiffMethylTools please cite:
+## Citing MethylFormer
+If you used MethylFormer please cite:
 
-Derbel, Houssemeddine, Evan Kinnear, Justin J-L. Wong, and Qian Liu. "DiffMethylTools: a toolbox of the detection, annotation and visualization of differential DNA methylation." bioRxiv (2025): 2025-07.
-
+Derbel, Houssemeddine, Zhao, Zhongming, and Qian Liu. "MethylFormer: A Deep Learning Framework for Differential DNA Methylation Detection" 
 *(Manuscript currently under peer review)*
