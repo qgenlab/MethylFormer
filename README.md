@@ -1,6 +1,6 @@
-# DiffMethylTools
-# DiffMethylTools
-DiffMethylTools is a Python-based toolkit for the comprehensive analysis of DNA methylation differences between two groups of samples. Designed for both short-read (e.g., WGBS, RRBS) and long-read (e.g., Nanopore) methylome data, DiffMethylTools enables accurate and streamlined detection of differentially methylated loci (DMLs) and regions (DMRs). The tool accepts flexible input formats including Bismark reports and generic BED-style methylation calls, making it compatible with most upstream methylation profiling workflows.
+# MethylFormer
+# MethylFormer
+MethylFormer is a Python-based toolkit for the comprehensive analysis of DNA methylation differences between two groups of samples. Designed for both short-read (e.g., WGBS, RRBS) and long-read (e.g., Nanopore) methylome data, DiffMethylTools enables accurate and streamlined detection of differentially methylated loci (DMLs) and regions (DMRs). The tool accepts flexible input formats including Bismark reports and generic BED-style methylation calls, making it compatible with most upstream methylation profiling workflows.
 
 The package integrates statistical testing, biological annotation, and high-quality visualization into a single-command pipeline. Users can merge and filter candidate regions, map methylation changes to gene features and cis-regulatory elements (CCREs), and generate summary plots such as volcano plots, Manhattan plots, heatmaps, and gene-region profiles. DiffMethylTools also includes a module for generating annotation pie charts that quantify overlap of DMRs with genomic and functional features.
 
@@ -10,7 +10,7 @@ By combining flexibility with usability, DiffMethylTools provides researchers wi
 
 ## Installation
 ### Install python dependencies
-To create DiffMethylTools environment, run:
+To create MethylFormer environment, run:
 ```
 conda env create -f environment.yml
 ```
@@ -35,7 +35,7 @@ chmod +x get_files_hg38.sh
 
 
 ### Generate DML/DMR and map positions to genes
-`DiffMethylTools` supports both **default methylation input formats** and **fully customizable formats**. Users can either specify a standard format via `--input_format` or manually define column indices.
+`MethylFormer` supports both **default methylation input formats** and **fully customizable formats**. Users can either specify a standard format via `--input_format` or manually define column indices.
 
 ### Default Input Formats
 #### Input Format 1: BED Format with Methylation Percentage
@@ -50,13 +50,13 @@ chr1    10470   10471   5mC  850   +   10470  10471  0,0,0   58   94.26
 
 Run all analysis with:
 ```
-python ../DiffMethylTools/DiffMethylTools.py all_analysis \
+python ../MethylFormer/DiffMethylTools.py all_analysis \
   --case_data_file case1.bed case2.bed \
   --ctr_data_file ctr1.bed ctr2.bed \
   --input_format BED \
   --ref_folder hg38 (or hg19)
 ```
-For BED input, DiffMethylTools automatically interprets:
+For BED input, MethylFormer automatically interprets:
 - Chromosome
 - Position
 - Coverage
@@ -80,7 +80,7 @@ chr1    10483   +     7   2   CG   CGC
 Run full analysis:
 
 ```
-python ../DiffMethylTools/DiffMethylTools.py all_analysis \
+python ../MethylFormer/DiffMethylTools.py all_analysis \
   --case_data_file case1_CpG_report.txt case2_CpG_report.txt case3_CpG_report.txt \
   --ctr_data_file ctr1_CpG_report.txt ctr2_CpG_report.txt ctr3_CpG_report.txt \
   --input_format CR \
