@@ -11,7 +11,7 @@ dmr_files=(
     "$path/methylsig/new2.methylSig..hg38.window.1000.csv"
     "$path/bsseq/new2.dsseq..hg38.DMR.csv"
     "$path/DiffMethylTools/data/generate_DMR_0.csv" # old dl clustring algorithm
-    "$path/DiffMethylTools_dl/data/generate_DMR_CPD_0.csv"
+    "$path/MethylFormer/data/generate_DMR_CPD_0.csv"
 )
 
 preprocessed_dmr_files=(
