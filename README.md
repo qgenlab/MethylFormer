@@ -14,7 +14,7 @@ conda env create -f environment.yml
 ```
 Then activate the environment with
 ```
-conda activate DiffMethylTools
+conda activate MethylFormer
 ```
 
 ### Download annotation databases
