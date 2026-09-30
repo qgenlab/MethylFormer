@@ -55,7 +55,8 @@ conda activate $env3
 
 mkdir -p $output/trimmed/tmp
 
-/mnt/analysis/derbelh/bismark/Bismark-0.24.2/bismark --bowtie2 $ref -1 $output/trimmed/output_forward_paired.fq -2 $output/trimmed/output_reverse_paired.fq --parallel $threads -o $output/trimmed/ --temp_dir $output/trimmed/tmp/ >> $output/trimmed/bismark.log 2> $output/trimmed/bismark.err.log
+#/mnt/analysis/derbelh/bismark
+~/Bismark-0.24.2/bismark --bowtie2 $ref -1 $output/trimmed/output_forward_paired.fq -2 $output/trimmed/output_reverse_paired.fq --parallel $threads -o $output/trimmed/ --temp_dir $output/trimmed/tmp/ >> $output/trimmed/bismark.log 2> $output/trimmed/bismark.err.log
 
 eval "$(conda shell.bash hook)"
 conda activate $env4
@@ -68,4 +69,5 @@ conda activate $env3
 
 samtools view -q 10 -F 1796 $output/trimmed/marked_output_forward_paired_bismark_bt2_pe.bam -o $output/trimmed/filtered_marked_output_forward_paired_bismark_bt2_pe.bam
 
-/mnt/analysis/derbelh/bismark/Bismark-0.24.2/bismark_methylation_extractor -p --comprehensive --no_overlap --cytosine_report --genome_folder $ref --zero_based $output/trimmed/filtered_marked_output_forward_paired_bismark_bt2_pe.bam --parallel $threads -o $output/trimmed/>> $output/trimmed/bismark_methylation_extractor.log 2> $output/trimmed/bismark_methylation_extractor.err.log
+#/mnt/analysis/derbelh/bismark
+~/Bismark-0.24.2/bismark_methylation_extractor -p --comprehensive --no_overlap --cytosine_report --genome_folder $ref --zero_based $output/trimmed/filtered_marked_output_forward_paired_bismark_bt2_pe.bam --parallel $threads -o $output/trimmed/>> $output/trimmed/bismark_methylation_extractor.log 2> $output/trimmed/bismark_methylation_extractor.err.log
