@@ -28,7 +28,7 @@ results=(
     "dss/new2.dss.CpG.hg38DMR.bed"
     "bsseq/new2.dsseq..hg38.DMR.bed"
     "DiffMethylTools/data/generate_DMR_0.bed"
-    "DiffMethylTools_dl/data/generate_DMR_CPD.bed"
+    "MethylFormer/data/generate_DMR_CPD.bed"
 )
 
 echo -e "Path\tBenchmark_File\tResult_File\tTotal_Benchmark_Regions\tTotal_Result_Regions\tOverlapping_Result_Regions\tNon_Overlapping_Result_Regions"
