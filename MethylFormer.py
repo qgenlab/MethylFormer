@@ -18,10 +18,10 @@ try:
     from lib import DL_train
 except ImportError as e:
     print(f"Could not import: {e.name}")
-    print("The tool will run in CPU-only mode (DiffMethylTools with limma).")
+    print("The tool will run in CPU-only mode (MethylFormer with limma).")
 
 
-class DiffMethylTools():
+class MethylFormer():
     def __init__(self, pipeline=True, results_path=None):
         self.pipeline = pipeline
         if results_path is None:
