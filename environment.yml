@@ -1,4 +1,4 @@
-name: DiffMethylTools
+name: MethylFormer
 channels:
   - conda-forge
   - bioconda
