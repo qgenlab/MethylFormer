@@ -318,7 +318,7 @@ class MethylFormer():
         :type sub_window_step: int, optional
         :param sub_window_min_diff: Sub-window minimum difference, defaults to 0
         :type sub_window_min_diff: int, optional
-        :param pipeline_window_result: The function results to use as input if DiffMethylTools is pipelined and no data is provided. Options are ``["auto", "filters", "generate_q_values", "window_based"]``, defaults to "auto"
+        :param pipeline_window_result: The function results to use as input if MethylFormer is pipelined and no data is provided. Options are ``["auto", "filters", "generate_q_values", "window_based"]``, defaults to "auto"
         :type pipeline_window_result: str, optional
         :param rerun: Rerun the analysis. If False, load previous output. Defaults to False.
         :type rerun: bool, optional
@@ -385,7 +385,7 @@ class MethylFormer():
         :type max_q_value: float, optional
         :param abs_min_diff: Absolute minimum difference filter, defaults to 0.25
         :type abs_min_diff: int, optional
-        :param position_or_window: The position-based or window-based results to use as input if DiffMethylTools is pipelined and no data is provided. Options are ``["auto", "position", "window"]``, defaults to "auto"
+        :param position_or_window: The position-based or window-based results to use as input if MethylFormer is pipelined and no data is provided. Options are ``["auto", "position", "window"]``, defaults to "auto"
         :type position_or_window: str, optional
         :param rerun: Rerun the analysis. If False, load previous output. Defaults to False.
         :type rerun: bool, optional
@@ -487,7 +487,7 @@ class MethylFormer():
         :type neurl_perc: int, optional
         :param opposite_perc: Opposite percentage, defaults to 10
         :type opposite_perc: int, optional
-        :param significant_position_pipeline: The significant position-based or window-based results to use as input if DiffMethylTools is pipelined and no data is provided. Options are ``["auto", "position", "window"]``, defaults to "auto"
+        :param significant_position_pipeline: The significant position-based or window-based results to use as input if MethylFormer is pipelined and no data is provided. Options are ``["auto", "position", "window"]``, defaults to "auto"
         :type significant_position_pipeline: str, optional
         :param rerun: Rerun the analysis. If False, load previous output. Defaults to False.
         :type rerun: bool, optional
@@ -683,7 +683,7 @@ class MethylFormer():
         :type x_label: str, optional
         :param y_label: Y-axis label, defaults to None for a generic label
         :type y_label: str, optional
-        :param position_or_window: The position-based or window-based results to use as input if DiffMethylTools is pipelined and no data is provided. Options are ``["auto", "position", "window"]``, defaults to "auto"
+        :param position_or_window: The position-based or window-based results to use as input if MethylFormer is pipelined and no data is provided. Options are ``["auto", "position", "window"]``, defaults to "auto"
         :type position_or_window: str, optional
         """
         name = self.results_path + "/" + name
@@ -739,7 +739,7 @@ class MethylFormer():
         :type x_label: str, optional
         :param y_label: Y-axis label, defaults to None for a generic label
         :type y_label: str, optional
-        :param position_or_window: The position-based or window-based results to use as input if DiffMethylTools is pipelined and no data is provided. Options are ``["auto", "position", "window"]``, defaults to "auto"
+        :param position_or_window: The position-based or window-based results to use as input if MethylFormer is pipelined and no data is provided. Options are ``["auto", "position", "window"]``, defaults to "auto"
         :type position_or_window: str, optional
         """        
         name = self.results_path + "/" + name
@@ -1512,8 +1512,8 @@ def main():
         parser.print_help()
         return
 
-    # Initialize DiffMethylTools instance
-    # tool = DiffMethylTools(pipeline=False)
+    # Initialize MethylFormer instance
+    # tool = MethylFormer(pipeline=False)
 
     # Get the selected method
     # method = getattr(tool, args.command)
@@ -1522,7 +1522,7 @@ def main():
     # sig = inspect.signature(method)
     # method_args = {}
 
-    tool = DiffMethylTools(pipeline=False, results_path = getattr(args, "results_path", "."))
+    tool = MethylFormer(pipeline=False, results_path = getattr(args, "results_path", "."))
 
     method = getattr(tool, args.command)
     sig = inspect.signature(method)
