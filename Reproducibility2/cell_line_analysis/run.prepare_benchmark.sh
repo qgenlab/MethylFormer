@@ -13,7 +13,7 @@ for dataset in "${paths[@]}"; do
                                $project_path/$dataset/dss/new2.dss.CpG.hg38DMR.bed \
                                $project_path/$dataset/bsseq/new2.dsseq..hg38.DMR.bed \
                                $project_path/$dataset/DiffMethylTools/data/generate_DMR_0.bed \
-                               $project_path/$dataset/DiffMethylTools_dl/data/filtered_bed/Gastric_cancer_l1_pen_0_1_scaled_sum_1_2.bed \
+                               $project_path/$dataset/MethylFormer/data/filtered_bed/Gastric_cancer_l1_pen_0_1_scaled_sum_1_2.bed \
                                $project_path/$dataset/benchmark_3
 done
 
