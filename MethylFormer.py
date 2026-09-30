@@ -862,7 +862,7 @@ class MethylFormer():
         :type upstream_y_label: str, optional
         :param CCRE_y_label: CCRE Y-axis label, defaults to None for a generic label
         :type CCRE_y_label: str, optional
-        :param position_or_window: The position-based or window-based results to use as input if DiffMethylTools is pipelined and no data is provided. Options are ``["auto", "position", "window"]``, defaults to "auto"
+        :param position_or_window: The position-based or window-based results to use as input if MethylFormer is pipelined and no data is provided. Options are ``["auto", "position", "window"]``, defaults to "auto"
         :type position_or_window: str, optional
         """
         name = self.results_path + "/" + name
@@ -1411,7 +1411,7 @@ def parse_arguments():
     parent_parser = argparse.ArgumentParser(add_help=False)
     parent_parser.add_argument("--results_path", type=str, default=".", help="The output folder.")
 
-    parser = argparse.ArgumentParser(description="DiffMethylTools")
+    parser = argparse.ArgumentParser(description="MethylFormer")
 
     parser.add_argument(
     "--version",
@@ -1422,8 +1422,8 @@ def parse_arguments():
     
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
-    obj = DiffMethylTools(pipeline=False)
-    # Dynamically add subcommands for each method in DiffMethylTools
+    obj = MethylFormer(pipeline=False)
+    # Dynamically add subcommands for each method in MethylFormer
     for name, method in inspect.getmembers(obj, predicate=inspect.ismethod):
         if name.startswith("_"):  # Skip private methods
             continue
